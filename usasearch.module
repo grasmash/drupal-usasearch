@@ -1,0 +1,166 @@
+<?php
+
+function usasearch_admin() {
+  $form = array();
+
+  $form['usasearch_affiliate_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Affiliate ID'),
+    '#default_value' => variable_get('usasearch_affiliate_id', ''),
+    '#size' => 15,
+    '#maxlength' => 30,
+    '#description' => t("Please enter the Affiliate ID provided by ") . "<a href=\"http://search.usa.gov\">USASearch</a>.",
+    '#required' => TRUE,
+  );
+
+  $form['usasearch_embedded'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Embedded Results?'),
+    '#default_value' => variable_get('usasearch_embedded', TRUE),
+    '#description' => t("Choose whether search results should be embedded in a local page or should be redirected to ") . "<a href=\"http://search.usa.gov\">USASearch</a>.",
+    '#required' => TRUE,
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function usasearch_preprocess_page(&$variables) {
+    $js_pages = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>' . "\n";
+    $variables['scripts'] .= $js_pages;
+    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/jquery/jquery.bgiframe.min.js"></script>' . "\n";
+    $variables['scripts'] .= $js_pages;
+    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js"></script>' . "\n";
+    $variables['scripts'] .= $js_pages;
+    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/sayt.js"></script>' . "\n";
+    $variables['scripts'] .= $js_pages;
+    $css_pages = '<link href="http://search.usa.gov/stylesheets/compiled/sayt.css" type="text/css" rel="stylesheet" />' . "\n";
+    $variables['scripts'] .= $css_pages;
+
+    if (variable_get('usasearch_embedded', TRUE) == TRUE) {
+      //for search results
+      $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/easyXDM/easyXDM.min.js"></script>' . "\n";
+      $variables['scripts'] .= $js_pages;
+      $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/affiliates.easyxdm.js"></script>' . "\n";
+      $variables['scripts'] .= $js_pages;
+      $js = "<script type=\"text/javascript\">\njQuery(document).ready(function() {\njQuery('#usasearch_results').easyxdm({ 'remoteHost': 'search.usa.gov' });\n});\n</script>\n";
+      $variables['scripts'] .= $js;
+      $style = "<style type=\"text/css\">\n/*<![CDATA[*/\n#usasearch_results {\ntext-align: center;\n}\n/*]]>*/\n</style>\n";
+      $variables['scripts'] .= $style;
+    }
+}
+
+function usasearch_results_tab() {
+    return t('Content');
+}
+
+function usasearch_results($keywords = '') {
+    drupal_set_title(t('Search Results'));
+    return ('<div id="usasearch_results"></div>');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function usasearch_menu() {
+  $items = array();
+
+  $items['admin/settings/usasearch'] = array(
+    'title' => t('USASearch settings'),
+    'description' => t('Contains settings for customizing the search to use USASearch'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('usasearch_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  if (variable_get('usasearch_embedded', TRUE) == TRUE) { 
+    $items['search/node/%'] = array(
+      'access arguments' => array('search content'),
+      'title callback' => 'usasearch_results_tab',
+      'description' => t('Search Results'),
+      'page callback' => 'usasearch_results', 
+      'page arguments' => array(1),
+      'type' => MENU_LOCAL_TASK,
+    );
+
+    $items['embedded_search'] = array(
+      'access arguments' => array('search content'),
+      'title callback' => 'usasearch_results_tab',
+      'description' => t('Search Results'),
+      'page callback' => 'usasearch_results', 
+      'page arguments' => array(1),
+      'type' => MENU_LOCAL_TASK,
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_form_alter().
+ * Changes the various search forms
+ */
+function usasearch_form_alter(&$form, &$form_state, $form_id) {
+//  if (user_access('search with autocomplete')) {
+//    $enabled_forms = variable_get('search_autocomplete_forms', array());
+
+//  if (isset($enabled_forms[$form_id])) {
+      // Search block and search box have similar form structure.
+      if ($form_id == 'search_block_form' || $form_id == 'search_theme_form') {
+        $form[$form_id]['#title'] = t('Search using USASearch');
+//        unset($vars['form']['search_block_form']['#title']);
+//        $form[$form_id]['#title_display'] = 'invisible';
+        if (variable_get('usasearch_embedded', TRUE) != TRUE) {
+          $form['#method'] = 'get';
+          $form['#action'] = 'http://search.usa.gov/search';
+          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
+          unset($form['form_build_id']);
+          unset($form['form_token']);
+          unset($form['form_id']);
+          $form[$form_id]['#name'] = 'query';
+          $form['actions']['submit']['#name'] = '';
+        } else {
+          $form['#method'] = 'get';
+          $form['#action'] = base_path() . 'embedded_search';
+          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
+          $form['embedded'] = array('#type' => 'hidden', '#value' => 'true');
+          unset($form['form_build_id']);
+          unset($form['form_token']);
+          unset($form['form_id']);
+          $form[$form_id]['#name'] = 'query';
+        }
+        $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+      }
+    
+    // Search page; only add autocomplete to node search.
+      if ($form_id == 'search_form' && $form['module']['#value'] == 'node') {
+        $form['basic']['#title'] = t('Search using USASearch');
+        if (variable_get('usasearch_embedded', TRUE) != TRUE) {
+          $form['#method'] = 'get';
+          $form['#action'] = 'http://search.usa.gov/search';
+          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
+          $form['basic']['inline']['keys']['#name'] = 'query';
+//        $form['basic']['actions']['submit']['#name'] = '';
+          unset($form['form_build_id']);
+          unset($form['form_token']);
+          unset($form['form_id']);
+        } else {
+          $form['#method'] = 'get';
+          $form['#action'] = base_path() . 'search/embedded';
+          $form['embedded'] = array('#type' => 'hidden', '#value' => 'true');
+          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
+          $form['basic']['inline']['keys']['#name'] = 'query';
+          unset($form['form_build_id']);
+          unset($form['form_token']);
+          unset($form['form_id']);
+        }
+        $form['basic']['inline']['keys']['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+        unset($form['advanced']);
+      }
+//    }
+//  }
+}
+
