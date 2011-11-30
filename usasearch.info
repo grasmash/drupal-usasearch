@@ -1,6 +1,6 @@
 name = USASearch
 description = "Provides customized search using the General Services Administration's USASearch program"
 core = 6.x
-files[] = usasearch.module
 dependencies[] = search
-configure = admin/config/usasearch
+configure = admin/settings/usasearch
+package = USASearch
