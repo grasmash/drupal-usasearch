@@ -3,21 +3,54 @@
 function usasearch_admin() {
   $form = array();
 
-  $form['usasearch_affiliate_id'] = array(
+  $form['usasearch_affiliate_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Affiliate ID'),
-    '#default_value' => variable_get('usasearch_affiliate_id', ''),
-    '#size' => 15,
+    '#title' => t('Affiliate name'),
+    '#default_value' => variable_get('usasearch_affiliate_name', ''),
+    '#size' => 30,
     '#maxlength' => 30,
-    '#description' => t("Please enter the Affiliate ID provided by ") . "<a href=\"http://search.usa.gov\">USASearch</a>.",
+    '#description' => t("Please enter your affiliate name provided by ") . "<a href=\"http://search.usa.gov\">USASearch</a>, eg. \"example.gov\".",
     '#required' => TRUE,
   );
-
-  $form['usasearch_embedded'] = array(
+  $form['usasearch_action_domain'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Search domain'),
+    '#default_value' => variable_get('usasearch_action_domain', 'search.usa.gov'),
+    '#size' => 30,
+    '#maxlength' => 50,
+    '#description' => t("You may enter a custom search domain, eg. search.commerce.gov, or leave the default search.usa.gov. This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>"),
+    '#required' => FALSE,
+  );
+  $form['usasearch_typeahead_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Type-ahead search settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#description' => 'Type-ahead for USASearch allows visitors to quickly get search suggestions as they type their search. Learn <a href="https://search.usa.gov/affiliates/how_it_works">how it works</a>. Also see instructions on <a href="http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say">how we implemented type-ahead search</a> in this module.',
+  );
+  $form['usasearch_typeahead_options']['usasearch_typeahead'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Embedded Results?'),
-    '#default_value' => variable_get('usasearch_embedded', TRUE),
-    '#description' => t("Choose whether search results should be embedded in a local page or should be redirected to ") . "<a href=\"http://search.usa.gov\">USASearch</a>.",
+    '#title' => t('Enable Type-ahead'),
+    '#default_value' => variable_get('usasearch_typeahead', 1),
+    '#description' => t("Uncheck this option if you want to disable the type-ahead search feature."),
+    '#required' => FALSE,
+  );
+  $form['usasearch_typeahead_options']['usasearch_affiliate_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Type-ahead affiliate ID'),
+    '#default_value' => variable_get('usasearch_affiliate_id', ''),
+    '#size' => 4,
+    '#maxlength' => 4,
+    '#description' => "Please enter the affiliate ID provided by <a href=\"http://search.usa.gov\">USASearch</a>, eg. \"77\", to limit the type-ahead search suggestions to those in your affiliate.",
+    '#required' => FALSE,
+  );
+  $form['usasearch_typeahead_options']['usasearch_js_location'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Type-ahead javascript location'),
+    '#default_value' => variable_get('usasearch_js_location', 'scripts'),
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#description' => t("Please enter the theme region where you want the required javacript to output. Some alternatives to 'scripts' are 'head' or 'closure'."),
     '#required' => TRUE,
   );
 
@@ -25,142 +58,110 @@ function usasearch_admin() {
 }
 
 /**
- * Implements hook_preprocess_page().
+ * Implements hook_preprocess_page() in order to output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
-    $js_pages = '<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>' . "\n";
-    $variables['scripts'] .= $js_pages;
-    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/jquery/jquery.bgiframe.min.js"></script>' . "\n";
-    $variables['scripts'] .= $js_pages;
+  // Check for usasearch_typeahead variable, if set output javascript and css references.
+  // Detailed info about this USASearch feature here: http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say#overview
+  if (variable_get('usasearch_typeahead',1)) {
+    // Set location to the value entered on the Admin screen or default to scripts.
+    $location = variable_get('usasearch_js_location', 'scripts');
     $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js"></script>' . "\n";
-    $variables['scripts'] .= $js_pages;
+    $variables[$location] .= $js_pages;
     $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/sayt.js"></script>' . "\n";
-    $variables['scripts'] .= $js_pages;
+    $variables[$location] .= $js_pages;
     $css_pages = '<link href="http://search.usa.gov/stylesheets/compiled/sayt.css" type="text/css" rel="stylesheet" />' . "\n";
-    $variables['scripts'] .= $css_pages;
+    $variables[$location] .= $css_pages;
 
-    if (variable_get('usasearch_embedded', TRUE) == TRUE) {
-      //for search results
-      $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/easyXDM/easyXDM.min.js"></script>' . "\n";
-      $variables['scripts'] .= $js_pages;
-      $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/affiliates.easyxdm.js"></script>' . "\n";
-      $variables['scripts'] .= $js_pages;
-      $js = "<script type=\"text/javascript\">\njQuery(document).ready(function() {\njQuery('#usasearch_results').easyxdm({ 'remoteHost': 'search.usa.gov' });\n});\n</script>\n";
-      $variables['scripts'] .= $js;
-      $style = "<style type=\"text/css\">\n/*<![CDATA[*/\n#usasearch_results {\ntext-align: center;\n}\n/*]]>*/\n</style>\n";
-      $variables['scripts'] .= $style;
+    // Check for usasearch_affiliate_id variable, if set output javascript inline WITH affilite id to limit suggestions.
+    if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
+      drupal_add_js("var usagov_sayt_url = 'http://search.usa.gov/sayt?aid=$affiliate_id&'", 'inline');
     }
-}
-
-function usasearch_results_tab() {
-    return t('Content');
-}
-
-function usasearch_results($keywords = '') {
-    drupal_set_title(t('Search Results'));
-    return ('<div id="usasearch_results"></div>');
+    // Otherwise use all search.usa.gov type-ahead suggestions.
+    else {
+      drupal_add_js("var usagov_sayt_url = 'http://search.usa.gov/sayt'", 'inline');
+    }
+  }
 }
 
 /**
- * Implements hook_menu().
+ * Page callback function to redirect requests to usasearch.
+ */
+function redirect_to_usasearch($query = '') {
+  // Set action_domain from variables table or default to search.usa.gov.
+  $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
+  // Set affiliate_name from variables table, checking for a value using ternary operator.
+  $affiliate_name = variable_get('usasearch_affiliate_name', '')?'affiliate=' . check_plain(variable_get('usasearch_affiliate_name', '')):'';
+  // Check for query terms and use them in redirect if there.
+  if ($query) {
+    drupal_goto("http://$action_domain/search", 'query=' . filter_xss($query) . ($affiliate_name?"&$affiliate_name":''));
+  }
+  else {
+    drupal_goto("http://$action_domain/search", $affiliate_name);
+  }
+}
+
+/**
+ * Implements hook_menu(). Add admin screen under settings.
  */
 function usasearch_menu() {
   $items = array();
 
   $items['admin/settings/usasearch'] = array(
     'title' => t('USASearch settings'),
-    'description' => t('Contains settings for customizing the search to use USASearch'),
+    'description' => t('Contains settings for customizing site search to use USASearch'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_admin'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
   );
-
-  if (variable_get('usasearch_embedded', TRUE) == TRUE) { 
-    $items['search/node/%'] = array(
-      'access arguments' => array('search content'),
-      'title callback' => 'usasearch_results_tab',
-      'description' => t('Search Results'),
-      'page callback' => 'usasearch_results', 
-      'page arguments' => array(1),
-      'type' => MENU_LOCAL_TASK,
-    );
-
-    $items['embedded_search'] = array(
-      'access arguments' => array('search content'),
-      'title callback' => 'usasearch_results_tab',
-      'description' => t('Search Results'),
-      'page callback' => 'usasearch_results', 
-      'page arguments' => array(1),
-      'type' => MENU_LOCAL_TASK,
-    );
-  }
-
   return $items;
 }
 
 /**
- * Implements hook_form_alter().
- * Changes the various search forms
+ * Implements hook_menu_alter(). Point /search and /search/node/% paths to callback which redirects to usasearch.
  */
-function usasearch_form_alter(&$form, &$form_state, $form_id) {
-//  if (user_access('search with autocomplete')) {
-//    $enabled_forms = variable_get('search_autocomplete_forms', array());
+function usasearch_menu_alter(&$items) {
+  $items['search'] = array(
+    'access arguments' => array('search content'),
+    'description' => t('Search Results'),
+    'page callback' => 'redirect_to_usasearch', 
+    'type' => MENU_CALLBACK,
+  );
 
-//  if (isset($enabled_forms[$form_id])) {
-      // Search block and search box have similar form structure.
-      if ($form_id == 'search_block_form' || $form_id == 'search_theme_form') {
-        $form[$form_id]['#title'] = t('Search using USASearch');
-//        unset($vars['form']['search_block_form']['#title']);
-//        $form[$form_id]['#title_display'] = 'invisible';
-        if (variable_get('usasearch_embedded', TRUE) != TRUE) {
-          $form['#method'] = 'get';
-          $form['#action'] = 'http://search.usa.gov/search';
-          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
-          unset($form['form_build_id']);
-          unset($form['form_token']);
-          unset($form['form_id']);
-          $form[$form_id]['#name'] = 'query';
-          $form['actions']['submit']['#name'] = '';
-        } else {
-          $form['#method'] = 'get';
-          $form['#action'] = base_path() . 'embedded_search';
-          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
-          $form['embedded'] = array('#type' => 'hidden', '#value' => 'true');
-          unset($form['form_build_id']);
-          unset($form['form_token']);
-          unset($form['form_id']);
-          $form[$form_id]['#name'] = 'query';
-        }
-        $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
-      }
-    
-    // Search page; only add autocomplete to node search.
-      if ($form_id == 'search_form' && $form['module']['#value'] == 'node') {
-        $form['basic']['#title'] = t('Search using USASearch');
-        if (variable_get('usasearch_embedded', TRUE) != TRUE) {
-          $form['#method'] = 'get';
-          $form['#action'] = 'http://search.usa.gov/search';
-          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
-          $form['basic']['inline']['keys']['#name'] = 'query';
-//        $form['basic']['actions']['submit']['#name'] = '';
-          unset($form['form_build_id']);
-          unset($form['form_token']);
-          unset($form['form_id']);
-        } else {
-          $form['#method'] = 'get';
-          $form['#action'] = base_path() . 'search/embedded';
-          $form['embedded'] = array('#type' => 'hidden', '#value' => 'true');
-          $form['affiliate'] = array('#type' => 'hidden', '#value' => variable_get('usasearch_affiliate_id', ''));
-          $form['basic']['inline']['keys']['#name'] = 'query';
-          unset($form['form_build_id']);
-          unset($form['form_token']);
-          unset($form['form_id']);
-        }
-        $form['basic']['inline']['keys']['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
-        unset($form['advanced']);
-      }
-//    }
-//  }
+  $items['search/node/%'] = array(
+    'access arguments' => array('search content'),
+    'description' => t('Search Results'),
+    'page callback' => 'redirect_to_usasearch', 
+    'page arguments' => array(2),
+    'type' => MENU_CALLBACK,
+  );
 }
 
+/**
+ * Implements hook_form_alter().
+ * Changes the search block and search theme forms and elements.
+ */
+function usasearch_form_alter(&$form, &$form_state, $form_id) {
+  // Search block and search box have similar form structure.
+  if ($form_id == 'search_block_form' || $form_id == 'search_theme_form') {
+    $form[$form_id]['#title'] = t('Search using USASearch');
+    // Set action method, location and read affiliate from variable
+    $form['#method'] = 'get';
+    $form['#action'] = 'http://' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')). '/search';
+    // Check for affiliate_name variable before printing the affiliate form element 
+    if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))){
+      $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
+    }
+    // Remove unnecessary, hidden input fields
+    unset($form['form_build_id']);
+    unset($form['form_token']);
+    unset($form['form_id']);
+    // Change text field name to query
+    $form[$form_id]['#name'] = 'query';
+    // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
+    if (variable_get('usasearch_typeahead',1)){
+      $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+    }
+  }
+}
