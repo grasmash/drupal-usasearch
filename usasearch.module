@@ -44,15 +44,6 @@ function usasearch_admin() {
     '#description' => "Please enter the affiliate ID provided by <a href=\"http://search.usa.gov\">USASearch</a>, eg. \"77\", to limit the type-ahead search suggestions to those in your affiliate.",
     '#required' => FALSE,
   );
-  $form['usasearch_typeahead_options']['usasearch_js_location'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Type-ahead javascript location'),
-    '#default_value' => variable_get('usasearch_js_location', 'scripts'),
-    '#size' => 30,
-    '#maxlength' => 30,
-    '#description' => t("Please enter the theme region where you want the required javacript to output. Some alternatives to 'scripts' are 'head' or 'closure'."),
-    '#required' => TRUE,
-  );
 
   return system_settings_form($form);
 }
@@ -64,14 +55,13 @@ function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_typeahead variable, if set output javascript and css references.
   // Detailed info about this USASearch feature here: http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say#overview
   if (variable_get('usasearch_typeahead',1)) {
-    // Set location to the value entered on the Admin screen or default to scripts.
-    $location = variable_get('usasearch_js_location', 'scripts');
-    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js"></script>' . "\n";
-    $variables[$location] .= $js_pages;
-    $js_pages = '<script type="text/javascript" src="http://search.usa.gov/javascripts/sayt.js"></script>' . "\n";
-    $variables[$location] .= $js_pages;
-    $css_pages = '<link href="http://search.usa.gov/stylesheets/compiled/sayt.css" type="text/css" rel="stylesheet" />' . "\n";
-    $variables[$location] .= $css_pages;
+    // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
+    // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
+    // See jquery_update module issue http://drupal.org/node/965680 for more information and to check the status of this problem.
+    $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js"></script>' . "\n";
+    $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/sayt.js"></script>' . "\n";
+    // Add external css.
+    $variables['styles'] .= '<link type="text/css" rel="stylesheet" media="all" href="http://search.usa.gov/stylesheets/compiled/sayt.css" />' . "\n";
 
     // Check for usasearch_affiliate_id variable, if set output javascript inline WITH affilite id to limit suggestions.
     if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {

@@ -5,7 +5,6 @@
 function usasearch_uninstall() {
   variable_del('usasearch_affiliate_name');
   variable_del('usasearch_affiliate_id');
-  variable_del('usasearch_js_location');
   variable_del('usasearch_action_domain');
   variable_del('usasearch_typeahead');
 }
