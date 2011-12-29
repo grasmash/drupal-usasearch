@@ -21,12 +21,19 @@ function usasearch_admin() {
     '#description' => t("You may enter a custom search domain, eg. search.commerce.gov, or leave the default search.usa.gov. This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>"),
     '#required' => FALSE,
   );
+  $form['usasearch_search_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Drupal search page'),
+    '#default_value' => variable_get('usasearch_search_page', 0),
+    '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href=" . base_path() . "admin/build/themes/settings>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to also enable the Drupal search page at /search instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use."),
+    '#required' => FALSE,
+  );
   $form['usasearch_typeahead_options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Type-ahead search settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#description' => 'Type-ahead for USASearch allows visitors to quickly get search suggestions as they type their search. Learn <a href="https://search.usa.gov/affiliates/how_it_works">how it works</a>. Also see instructions on <a href="http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say">how we implemented type-ahead search</a> in this module.',
+    '#description' => 'Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="https://search.usa.gov/affiliates/how_it_works">how it works</a>. Also see instructions on <a href="http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say">how we implemented type-ahead search</a> in this module.',
   );
   $form['usasearch_typeahead_options']['usasearch_typeahead'] = array(
     '#type' => 'checkbox',
@@ -112,20 +119,24 @@ function usasearch_menu() {
  * Implements hook_menu_alter(). Point /search and /search/node/% paths to callback which redirects to usasearch.
  */
 function usasearch_menu_alter(&$items) {
-  $items['search'] = array(
-    'access arguments' => array('search content'),
-    'description' => t('Search Results'),
-    'page callback' => 'redirect_to_usasearch', 
-    'type' => MENU_CALLBACK,
+  if (variable_get('usasearch_search_page',0)) {
+   }
+   else {
+    $items['search'] = array(
+      'access arguments' => array('search content'),
+      'description' => t('Search Results'),
+      'page callback' => 'redirect_to_usasearch', 
+      'type' => MENU_CALLBACK,
+    );
+   
+    $items['search/node/%'] = array(
+      'access arguments' => array('search content'),
+      'description' => t('Search Results'),
+      'page callback' => 'redirect_to_usasearch', 
+      'page arguments' => array(2),
+      'type' => MENU_CALLBACK,
   );
-
-  $items['search/node/%'] = array(
-    'access arguments' => array('search content'),
-    'description' => t('Search Results'),
-    'page callback' => 'redirect_to_usasearch', 
-    'page arguments' => array(2),
-    'type' => MENU_CALLBACK,
-  );
+  }
 }
 
 /**
@@ -134,8 +145,7 @@ function usasearch_menu_alter(&$items) {
  */
 function usasearch_form_alter(&$form, &$form_state, $form_id) {
   // Search block and search box have similar form structure.
-  if ($form_id == 'search_block_form' || $form_id == 'search_theme_form') {
-    $form[$form_id]['#title'] = t('Search using USASearch');
+  if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
     // Set action method, location and read affiliate from variable
     $form['#method'] = 'get';
     $form['#action'] = 'http://' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')). '/search';
@@ -147,11 +157,24 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
     unset($form['form_build_id']);
     unset($form['form_token']);
     unset($form['form_id']);
-    // Change text field name to query
-    $form[$form_id]['#name'] = 'query';
-    // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
-    if (variable_get('usasearch_typeahead',1)){
-      $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+
+    if ($form_id == 'search_form') {
+      // Change text field name to query and unset advanced search in search_form
+      $form['basic']['inline']['keys']['#name'] = 'query';
+      unset($form['advanced']);
+      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
+      if (variable_get('usasearch_typeahead',1)){
+        $form['basic']['inline']['keys']['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+      }
+    }
+    else {
+      // Change text field name to query and title in search_block_form and search_theme_form
+      $form[$form_id]['#name'] = 'query';
+      $form[$form_id]['#title'] = t('Search using USASearch');
+      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
+      if (variable_get('usasearch_typeahead',1)){
+        $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+      }
     }
   }
 }
