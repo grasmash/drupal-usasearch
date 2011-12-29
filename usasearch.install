@@ -1,5 +1,10 @@
 <?php
 /**
+ * @file
+ * Install, update and uninstall functions for the usasearch module.
+ */
+
+/**
  * Implementation of hook_uninstall().
  */
 function usasearch_uninstall() {
