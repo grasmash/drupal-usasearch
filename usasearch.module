@@ -107,7 +107,8 @@ function usasearch_redirect_to_usasearch($query = '') {
 }
 
 /**
- * Implements hook_menu() for adding admin screen under settings.
+ * Implements hook_menu().
+ * Adds admin screen under settings.
  */
 function usasearch_menu() {
   $items = array();
@@ -124,7 +125,8 @@ function usasearch_menu() {
 }
 
 /**
- * Implements hook_menu_alter() for pointing /search and /search/node/% paths to callback which redirects to usasearch.
+ * Implements hook_menu_alter().
+ * Point /search and /search/node/% paths to callback which redirects to usasearch.
  */
 function usasearch_menu_alter(&$items) {
   if (variable_get('usasearch_search_page', 0)) {
