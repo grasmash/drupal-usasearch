@@ -1,5 +1,12 @@
 <?php
+/**
+ * @file
+ * Replaces Drupal search, redirects all search queries to USASearch service (http://search.usa.gov).
+ */
 
+/**
+ * System settings form for USASearch.
+ */
 function usasearch_admin() {
   $form = array();
 
@@ -56,11 +63,11 @@ function usasearch_admin() {
 }
 
 /**
- * Implements hook_preprocess_page() in order to output required javascript and css references.
+ * Implements hook_preprocess_page(). In order to output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_typeahead variable, if set output javascript and css references.
-  // Detailed info about this USASearch feature here: http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say#overview
+  // Detailed info about this USASearch feature here: http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say#overview.
   if (variable_get('usasearch_typeahead', 1)) {
     // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
     // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
@@ -84,7 +91,7 @@ function usasearch_preprocess_page(&$variables) {
 /**
  * Page callback function to redirect requests to usasearch.
  */
-function redirect_to_usasearch($query = '') {
+function usasearch_redirect_to_usasearch($query = '') {
   // Set action_domain from variables table or default to search.usa.gov.
   $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
   // Set affiliate_name from variables table, checking for a value using ternary operator.
@@ -125,14 +132,14 @@ function usasearch_menu_alter(&$items) {
     $items['search'] = array(
       'access arguments' => array('search content'),
       'description' => t('Search Results'),
-      'page callback' => 'redirect_to_usasearch',
+      'page callback' => 'usasearch_redirect_to_usasearch',
       'type' => MENU_CALLBACK,
     );
 
     $items['search/node/%'] = array(
       'access arguments' => array('search content'),
       'description' => t('Search Results'),
-      'page callback' => 'redirect_to_usasearch',
+      'page callback' => 'usasearch_redirect_to_usasearch',
       'page arguments' => array(2),
       'type' => MENU_CALLBACK,
   );
@@ -141,7 +148,7 @@ function usasearch_menu_alter(&$items) {
 
 /**
  * Implements hook_form_alter().
- * Changes the search block and search theme forms and elements.
+ * Changes elements in the search block, search theme form, search page form.
  */
 function usasearch_form_alter(&$form, &$form_state, $form_id) {
   // Search block and search box have similar form structure.
@@ -153,25 +160,25 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
     if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
       $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
     }
-    // Remove unnecessary, hidden input fields
+    // Remove unnecessary, hidden input fields.
     unset($form['form_build_id']);
     unset($form['form_token']);
     unset($form['form_id']);
 
     if ($form_id == 'search_form') {
-      // Change text field name to query and unset advanced search in search_form
+      // Change text field name to query and unset advanced search in search_form.
       $form['basic']['inline']['keys']['#name'] = 'query';
       unset($form['advanced']);
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
+      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
       if (variable_get('usasearch_typeahead', 1)) {
         $form['basic']['inline']['keys']['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
       }
     }
     else {
-      // Change text field name to query and title in search_block_form and search_theme_form
+      // Change text field name to query and title in search_block_form and search_theme_form.
       $form[$form_id]['#name'] = 'query';
       $form[$form_id]['#title'] = t('Search using USASearch');
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature
+      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
       if (variable_get('usasearch_typeahead', 1)) {
         $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
       }

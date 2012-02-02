@@ -5,7 +5,7 @@
  */
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function usasearch_uninstall() {
   variable_del('usasearch_affiliate_name');
