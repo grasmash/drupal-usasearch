@@ -63,7 +63,8 @@ function usasearch_admin() {
 }
 
 /**
- * Implements hook_preprocess_page(). In order to output required javascript and css references.
+ * Implements hook_preprocess_page().
+ * To output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_typeahead variable, if set output javascript and css references.
@@ -106,7 +107,7 @@ function usasearch_redirect_to_usasearch($query = '') {
 }
 
 /**
- * Implements hook_menu(). Add admin screen under settings.
+ * Implements hook_menu() for adding admin screen under settings.
  */
 function usasearch_menu() {
   $items = array();
@@ -123,7 +124,7 @@ function usasearch_menu() {
 }
 
 /**
- * Implements hook_menu_alter(). Point /search and /search/node/% paths to callback which redirects to usasearch.
+ * Implements hook_menu_alter() for pointing /search and /search/node/% paths to callback which redirects to usasearch.
  */
 function usasearch_menu_alter(&$items) {
   if (variable_get('usasearch_search_page', 0)) {
@@ -142,7 +143,7 @@ function usasearch_menu_alter(&$items) {
       'page callback' => 'usasearch_redirect_to_usasearch',
       'page arguments' => array(2),
       'type' => MENU_CALLBACK,
-  );
+    );
   }
 }
 
@@ -153,10 +154,10 @@ function usasearch_menu_alter(&$items) {
 function usasearch_form_alter(&$form, &$form_state, $form_id) {
   // Search block and search box have similar form structure.
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
-    // Set action method, location and read affiliate from variable
+    // Set action method, location and read affiliate from variable.
     $form['#method'] = 'get';
     $form['#action'] = 'http://' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
-    // Check for affiliate_name variable before printing the affiliate form element
+    // Check for affiliate_name variable before printing the affiliate form element.
     if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
       $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
     }
