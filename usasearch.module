@@ -16,7 +16,7 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_affiliate_name', ''),
     '#size' => 30,
     '#maxlength' => 30,
-    '#description' => t("Please enter your affiliate name provided by") . " <a href=\"http://search.usa.gov\">USASearch</a>, eg. \"example.gov\".",
+    '#description' => t('Please enter your affiliate name provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "example.gov".', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
     '#required' => TRUE,
   );
   $form['usasearch_action_domain'] = array(
@@ -25,14 +25,14 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_action_domain', 'search.usa.gov'),
     '#size' => 30,
     '#maxlength' => 50,
-    '#description' => t("You may enter a custom search domain, eg. search.commerce.gov, or leave the default search.usa.gov. This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>"),
+    '#description' => t('You may enter a custom search domain, eg. "search.commerce.gov", or leave the default "search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
     '#required' => FALSE,
   );
   $form['usasearch_search_page'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Enable Drupal search page'),
+    '#title' => t('Keep Drupal search page'),
     '#default_value' => variable_get('usasearch_search_page', 0),
-    '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href=" . base_path() . "admin/build/themes/settings>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to also enable the Drupal search page at /search instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use."),
+    '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href='@usasearch_theme_settings'>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to keep the Drupal search page instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use. <strong>NOTE: You must clear your menu cache if you enable this setting.</strong>", array('@usasearch_theme_settings' => url('admin/build/themes/settings'))),
     '#required' => FALSE,
   );
   $form['usasearch_typeahead_options'] = array(
@@ -40,7 +40,7 @@ function usasearch_admin() {
     '#title' => t('Type-ahead search settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#description' => 'Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="https://search.usa.gov/affiliates/how_it_works">how it works</a>. Also see instructions on <a href="http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say">how we implemented type-ahead search</a> in this module.',
+    '#description' => t('Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="@usasearch_affiliates_howitworks">how it works</a>. Also see instructions on <a href="@usasearch_type-ahead">how we implemented type-ahead search</a> in this module.', array('@usasearch_affiliates_howitworks' => url('http://searchblog.usa.gov/post/14511943779/type-ahead-search'), '@usasearch_type-ahead' => url('http://searchblog.usa.gov/post/18861028503/how-to-add-our-code-to-your-website'))),
   );
   $form['usasearch_typeahead_options']['usasearch_typeahead'] = array(
     '#type' => 'checkbox',
@@ -55,7 +55,7 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_affiliate_id', ''),
     '#size' => 4,
     '#maxlength' => 4,
-    '#description' => "Please enter the affiliate ID provided by <a href=\"http://search.usa.gov\">USASearch</a>, eg. \"77\", to limit the type-ahead search suggestions to those in your affiliate.",
+    '#description' => t('Please enter the affiliate ID provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "77", to limit the type-ahead search suggestions to those in your affiliate.', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
     '#required' => FALSE,
   );
 
@@ -68,7 +68,7 @@ function usasearch_admin() {
  */
 function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_typeahead variable, if set output javascript and css references.
-  // Detailed info about this USASearch feature here: http://searchsupport.usa.gov/entries/219044-how-to-implement-search-as-you-type-say#overview.
+  // Detailed info about this USASearch feature here: http://searchblog.usa.gov/post/18861028503/how-to-add-our-code-to-your-website.
   if (variable_get('usasearch_typeahead', 1)) {
     // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
     // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
@@ -96,10 +96,10 @@ function usasearch_redirect_to_usasearch($query = '') {
   // Set action_domain from variables table or default to search.usa.gov.
   $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
   // Set affiliate_name from variables table, checking for a value using ternary operator.
-  $affiliate_name = variable_get('usasearch_affiliate_name', '')?'affiliate=' . check_plain(variable_get('usasearch_affiliate_name', '')):'';
+  $affiliate_name = variable_get('usasearch_affiliate_name', '') ? 'affiliate=' . check_plain(variable_get('usasearch_affiliate_name', '')) : '';
   // Check for query terms and use them in redirect if there.
   if ($query) {
-    drupal_goto("http://$action_domain/search", 'query=' . filter_xss($query) . ($affiliate_name?"&$affiliate_name":''));
+    drupal_goto("http://$action_domain/search", 'query=' . filter_xss($query) . ($affiliate_name ? "&$affiliate_name" : ''));
   }
   else {
     drupal_goto("http://$action_domain/search", $affiliate_name);
@@ -129,19 +129,17 @@ function usasearch_menu() {
  * Point /search and /search/node/% paths to callback which redirects to usasearch.
  */
 function usasearch_menu_alter(&$items) {
-  if (variable_get('usasearch_search_page', 0)) {
-  }
-  else {
+  if (!variable_get('usasearch_search_page', 0)) {
     $items['search'] = array(
       'access arguments' => array('search content'),
-      'description' => t('Search Results'),
+      'description' => 'Search Results',
       'page callback' => 'usasearch_redirect_to_usasearch',
       'type' => MENU_CALLBACK,
     );
 
     $items['search/node/%'] = array(
       'access arguments' => array('search content'),
-      'description' => t('Search Results'),
+      'description' => 'Search Results',
       'page callback' => 'usasearch_redirect_to_usasearch',
       'page arguments' => array(2),
       'type' => MENU_CALLBACK,
