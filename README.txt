@@ -15,17 +15,17 @@ OVERVIEW
 USASearch is an embeddable search engine that can 
 be used to search a site. An Affiliate profile and
 associated Affiliate ID are required. Read more at
-http://searchblog.usa.gov/
+http://usasearch.howto.gov/
 
 QUICK SETUP
 -----------
 
-After installing this module, activate USASearch at 
-admin/settings/usasearch, and configure it by entering
-USASearch's unique Affiliate name for your affiliate. Once you
-have granted permission for one or more roles to search 
-using the built-in Search module, the the standard search box
-becomes a USASearch powered search.
+After installing this module, activate it and then configure 
+it at admin/settings/usasearch by entering USASearch's unique
+affiliate name for your affiliate. Once you have granted
+permission for one or more roles to search using the built-in
+search module, the the standard search box becomes a USASearch
+powered search.
 
 REQUIREMENTS
 ------------
@@ -56,6 +56,7 @@ OPTIONS
    this option for your affiliate)
  * Keep Drupal search page (keeps the Drupal search page
    instead of redirecting it to USASearch
+ * Enable Discovery Tag
  * Enable Type-ahead
  * Type-ahead affiliate ID (this is a numeric code, eg. 77)
 

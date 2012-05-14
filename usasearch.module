@@ -35,12 +35,19 @@ function usasearch_admin() {
     '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href='@usasearch_theme_settings'>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to keep the Drupal search page instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use. <strong>NOTE: You must clear your menu cache if you enable this setting.</strong>", array('@usasearch_theme_settings' => url('admin/build/themes/settings'))),
     '#required' => FALSE,
   );
+  $form['usasearch_discovery_tag'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Discovery Tag'),
+    '#default_value' => variable_get('usasearch_discovery_tag', 1),
+    '#description' => t("The best way to ensure the USASearch service has complete and timely coverage of your content in their index is to add their discovery tag on your webpages. This option does just that."),
+    '#required' => FALSE,
+  );
   $form['usasearch_typeahead_options'] = array(
     '#type' => 'fieldset',
     '#title' => t('Type-ahead search settings'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#description' => t('Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="@usasearch_affiliates_howitworks">how it works</a>. Also see instructions on <a href="@usasearch_type-ahead">how we implemented type-ahead search</a> in this module.', array('@usasearch_affiliates_howitworks' => url('http://searchblog.usa.gov/post/14511943779/type-ahead-search'), '@usasearch_type-ahead' => url('http://searchblog.usa.gov/post/18861028503/how-to-add-our-code-to-your-website'))),
+    '#description' => t('Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="@usasearch_affiliates_howitworks">how it works</a>. Also see instructions on <a href="@usasearch_type-ahead">how we implemented type-ahead search</a> in this module.', array('@usasearch_affiliates_howitworks' => url('http://usasearch.howto.gov/post/14511943779/how-to-implement-type-ahead-search'), '@usasearch_type-ahead' => url('http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website'))),
   );
   $form['usasearch_typeahead_options']['usasearch_typeahead'] = array(
     '#type' => 'checkbox',
@@ -68,7 +75,7 @@ function usasearch_admin() {
  */
 function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_typeahead variable, if set output javascript and css references.
-  // Detailed info about this USASearch feature here: http://searchblog.usa.gov/post/18861028503/how-to-add-our-code-to-your-website.
+  // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
   if (variable_get('usasearch_typeahead', 1)) {
     // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
     // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
@@ -80,13 +87,22 @@ function usasearch_preprocess_page(&$variables) {
 
     // Check for usasearch_affiliate_id variable, if set output javascript inline WITH affilite id to limit suggestions.
     if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
-      drupal_add_js("var usagov_sayt_url = 'http://search.usa.gov/sayt?aid=$affiliate_id&'", 'inline');
+      $inline_js = "var usagov_sayt_url = 'http://search.usa.gov/sayt?aid=$affiliate_id&';";
     }
     // Otherwise use all search.usa.gov type-ahead suggestions.
     else {
-      drupal_add_js("var usagov_sayt_url = 'http://search.usa.gov/sayt'", 'inline');
+      $inline_js = "var usagov_sayt_url = 'http://search.usa.gov/sayt';";
     }
   }
+  // Check for usasearch_discovery_tag variable, if set output javascript references.
+  if (variable_get('usasearch_discovery_tag', 1)) {
+    if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
+      $inline_js .= "var aid = '$affiliate_name';";
+      $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/stats.js"></script>' . "\n";
+    }
+  }
+  // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
+  drupal_add_js($inline_js, 'inline');
 }
 
 /**
