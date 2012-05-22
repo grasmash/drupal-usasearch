@@ -67,6 +67,8 @@ function usasearch_admin() {
  * To output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
+  // Declare the variable
+  $inline_js = '';
   // Check for usasearch_affiliate_id variable, if set output javascript and css references.
   // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
   if (variable_get('usasearch_affiliate_id', '')) {
@@ -79,13 +81,9 @@ function usasearch_preprocess_page(&$variables) {
     // Add external css.
     drupal_add_css('http://search.usa.gov/stylesheets/compiled/sayt.css', array('type' => 'external', 'media' => 'all'));
 
-    // Check for usasearch_affiliate_id variable, if set output javascript inline WITH affilite id to limit suggestions.
+    // Check for usasearch_affiliate_id variable, if set output javascript inline with affilite id to limit suggestions.
     if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
       $inline_js = "var usagov_sayt_url = 'http://search.usa.gov/sayt?aid=$affiliate_id&';";
-    }
-    // Otherwise use all search.usa.gov type-ahead suggestions.
-    else {
-      $inline_js = "var usagov_sayt_url = 'http://search.usa.gov/sayt';";
     }
   }
   // Check for usasearch_discovery_tag variable, if set output javascript references.

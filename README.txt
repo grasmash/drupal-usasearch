@@ -32,6 +32,8 @@ REQUIREMENTS
 
  * A valid Affiliate profile from USASearch
  * Core Search module must be enabled
+
+Drupal 6 ONLY
  * jQuery Update module (any 6.x-2.x release/dev)
 
 INSTALLATION
@@ -57,7 +59,6 @@ OPTIONS
  * Keep Drupal search page (keeps the Drupal search page
    instead of redirecting it to USASearch
  * Enable Discovery Tag
- * Enable Type-ahead
  * Type-ahead affiliate ID (this is a numeric code, eg. 77)
 
 FEATURES
