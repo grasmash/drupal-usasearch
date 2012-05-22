@@ -49,20 +49,13 @@ function usasearch_admin() {
     '#collapsed' => FALSE,
     '#description' => t('Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="@usasearch_affiliates_howitworks">how it works</a>. Also see instructions on <a href="@usasearch_type-ahead">how we implemented type-ahead search</a> in this module.', array('@usasearch_affiliates_howitworks' => url('http://usasearch.howto.gov/post/14511943779/how-to-implement-type-ahead-search'), '@usasearch_type-ahead' => url('http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website'))),
   );
-  $form['usasearch_typeahead_options']['usasearch_typeahead'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable Type-ahead'),
-    '#default_value' => variable_get('usasearch_typeahead', 1),
-    '#description' => t("Uncheck this option if you want to disable the type-ahead search feature."),
-    '#required' => FALSE,
-  );
   $form['usasearch_typeahead_options']['usasearch_affiliate_id'] = array(
     '#type' => 'textfield',
     '#title' => t('Type-ahead affiliate ID'),
     '#default_value' => variable_get('usasearch_affiliate_id', ''),
     '#size' => 4,
     '#maxlength' => 4,
-    '#description' => t('Please enter the affiliate ID provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "77", to limit the type-ahead search suggestions to those in your affiliate.', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
+    '#description' => t('Please enter the affiliate ID provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "77", to enable the type-ahead search suggestion feature on this Drupal site.', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
     '#required' => FALSE,
   );
 
@@ -74,16 +67,17 @@ function usasearch_admin() {
  * To output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
-  // Check for usasearch_typeahead variable, if set output javascript and css references.
+  // Check for usasearch_affiliate_id variable, if set output javascript and css references.
   // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
-  if (variable_get('usasearch_typeahead', 1)) {
+  if (variable_get('usasearch_affiliate_id', '')) {
     // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
     // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
     // See jquery_update module issue http://drupal.org/node/965680 for more information and to check the status of this problem.
-    $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js"></script>' . "\n";
-    $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/sayt.js"></script>' . "\n";
+    drupal_add_js('http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js', array('type' => 'external', 'defer' => TRUE));
+    drupal_add_js('http://search.usa.gov/javascripts/sayt.js', array('type' => 'external', 'defer' => TRUE));
+
     // Add external css.
-    $variables['styles'] .= '<link type="text/css" rel="stylesheet" media="all" href="http://search.usa.gov/stylesheets/compiled/sayt.css" />' . "\n";
+    drupal_add_css('http://search.usa.gov/stylesheets/compiled/sayt.css', array('type' => 'external', 'media' => 'all'));
 
     // Check for usasearch_affiliate_id variable, if set output javascript inline WITH affilite id to limit suggestions.
     if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
@@ -98,7 +92,7 @@ function usasearch_preprocess_page(&$variables) {
   if (variable_get('usasearch_discovery_tag', 1)) {
     if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
       $inline_js .= "var aid = '$affiliate_name';";
-      $variables['head'] .= '<script type="text/javascript" defer="defer" src="http://search.usa.gov/javascripts/stats.js"></script>' . "\n";
+      drupal_add_js('http://search.usa.gov/javascripts/stats.js', array('type' => 'external', 'media' => 'all'));
     }
   }
   // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
@@ -187,8 +181,8 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
       $form['basic']['inline']['keys']['#name'] = 'query';
       unset($form['advanced']);
       // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_typeahead', 1)) {
-        $form['basic']['inline']['keys']['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+      if (variable_get('usasearch_affiliate_id', '')) {
+        $form['basic']['inline']['keys']['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
       }
     }
     else {
@@ -196,8 +190,8 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
       $form[$form_id]['#name'] = 'query';
       $form[$form_id]['#title'] = t('Search using USASearch');
       // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_typeahead', 1)) {
-        $form[$form_id]['#attributes'] = array('class' => 'usagov-search-autocomplete ui-autocomplete-input ui-corner-all', 'autocomplete' => 'off');
+      if (variable_get('usasearch_affiliate_id', '')) {
+        $form[$form_id]['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
       }
     }
   }

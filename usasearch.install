@@ -12,6 +12,15 @@ function usasearch_uninstall() {
   variable_del('usasearch_affiliate_id');
   variable_del('usasearch_action_domain');
   variable_del('usasearch_search_page');
-  variable_del('usasearch_typeahead');
   variable_del('usasearch_discovery_tag');
+}
+
+/**
+ * Implements hook_update().
+ */
+function usasearch_update_6200() {
+  /* Delete unused variable for users already using the module */
+  variable_del('usasearch_typeahead');
+  /* Return empty array so the update hook is happy. */
+  return array();
 }

@@ -1,7 +1,7 @@
 name = USASearch
 description = "Provides customized search using the General Services Administration's USASearch program"
-core = 6.x
-dependencies[] = search
-dependencies[] = jquery_update
+core = 7.x
 configure = admin/settings/usasearch
 package = USASearch
+
+dependencies[] = search
