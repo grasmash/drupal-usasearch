@@ -72,14 +72,12 @@ function usasearch_preprocess_page(&$variables) {
   // Check for usasearch_affiliate_id variable, if set output javascript and css references.
   // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
   if (variable_get('usasearch_affiliate_id', '')) {
-    // Add external scripts into $variables['head'], instead of $variables['scripts'], due to jquery_update module, any 6-2x version as of 12/29/2011, clobbering $variables['scripts'].
-    // This also means we need to defer the script loading so that they see the jquery javascript since these lines will print before the jquery script include.
-    // See jquery_update module issue http://drupal.org/node/965680 for more information and to check the status of this problem.
-    drupal_add_js('http://search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js', array('type' => 'external', 'defer' => TRUE));
-    drupal_add_js('http://search.usa.gov/javascripts/sayt.js', array('type' => 'external', 'defer' => TRUE));
+    // Add external scripts using drupal_add_js. Reference using protocol-less URLs. Defer loading.
+    drupal_add_js('//search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js', array('type' => 'external', 'defer' => TRUE));
+    drupal_add_js('//search.usa.gov/javascripts/sayt.js', array('type' => 'external', 'defer' => TRUE));
 
     // Add external css.
-    drupal_add_css('http://search.usa.gov/stylesheets/compiled/sayt.css', array('type' => 'external', 'media' => 'all'));
+    drupal_add_css('//search.usa.gov/stylesheets/compiled/sayt.css', array('type' => 'external', 'media' => 'all'));
 
     // Check for usasearch_affiliate_id variable, if set output javascript inline with affilite id to limit suggestions.
     if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
@@ -90,7 +88,7 @@ function usasearch_preprocess_page(&$variables) {
   if (variable_get('usasearch_discovery_tag', 1)) {
     if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
       $inline_js .= "var aid = '$affiliate_name';";
-      drupal_add_js('http://search.usa.gov/javascripts/stats.js', array('type' => 'external', 'media' => 'all'));
+      drupal_add_js('//search.usa.gov/javascripts/stats.js', array('type' => 'external', 'media' => 'all'));
     }
   }
   // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
@@ -104,13 +102,15 @@ function usasearch_redirect_to_usasearch($query = '') {
   // Set action_domain from variables table or default to search.usa.gov.
   $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
   // Set affiliate_name from variables table, checking for a value using ternary operator.
-  $affiliate_name = variable_get('usasearch_affiliate_name', '') ? 'affiliate=' . check_plain(variable_get('usasearch_affiliate_name', '')) : '';
+  $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
+  // Set action_protocol from server globals, checking for a value using ternary operator.
+  $action_protocol = isset($_SERVER['HTTPS']) ? 'https' : 'http';
   // Check for query terms and use them in redirect if there.
   if ($query) {
-    drupal_goto("http://$action_domain/search", 'query=' . filter_xss($query) . ($affiliate_name ? "&$affiliate_name" : ''));
+    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('query' => filter_xss($query), 'affiliate' => $affiliate_name)));
   }
   else {
-    drupal_goto("http://$action_domain/search", $affiliate_name);
+    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('affiliate' => $affiliate_name)));
   }
 }
 
@@ -164,7 +164,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
     // Set action method, location and read affiliate from variable.
     $form['#method'] = 'get';
-    $form['#action'] = 'http://' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
+    $form['#action'] = '//' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
     // Check for affiliate_name variable before printing the affiliate form element.
     if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
       $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
