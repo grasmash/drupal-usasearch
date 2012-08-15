@@ -1,7 +1,7 @@
 name = USASearch
 description = "Provides customized search using the General Services Administration's USASearch program"
 core = 7.x
-configure = admin/settings/usasearch
+configure = admin/config/search/usasearch
 package = USASearch
 
 dependencies[] = search

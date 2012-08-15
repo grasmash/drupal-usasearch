@@ -121,12 +121,12 @@ function usasearch_redirect_to_usasearch($query = '') {
 function usasearch_menu() {
   $items = array();
 
-  $items['admin/settings/usasearch'] = array(
+  $items['admin/config/search/usasearch'] = array(
     'title' => 'USASearch settings',
     'description' => 'Contains settings for customizing site search to use USASearch',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_admin'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer search'),
     'type' => MENU_NORMAL_ITEM,
   );
   return $items;
