@@ -35,30 +35,6 @@ function usasearch_admin() {
     '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href='@usasearch_theme_settings'>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to keep the Drupal search page instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use. <strong>NOTE: You must clear your menu cache if you enable this setting.</strong>", array('@usasearch_theme_settings' => url('admin/build/themes/settings'))),
     '#required' => FALSE,
   );
-  $form['usasearch_discovery_tag'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enable Discovery Tag'),
-    '#default_value' => variable_get('usasearch_discovery_tag', 1),
-    '#description' => t("The best way to ensure the USASearch service has complete and timely coverage of your content in their index is to add their discovery tag on your webpages. This option does just that."),
-    '#required' => FALSE,
-  );
-  $form['usasearch_typeahead_options'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Type-ahead search settings'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#description' => t('Type-ahead for USASearch allows visitors to quickly see search suggestions as they type their search. Learn <a href="@usasearch_affiliates_howitworks">how it works</a>. Also see instructions on <a href="@usasearch_type-ahead">how we implemented type-ahead search</a> in this module.', array('@usasearch_affiliates_howitworks' => url('http://usasearch.howto.gov/post/14511943779/how-to-implement-type-ahead-search'), '@usasearch_type-ahead' => url('http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website'))),
-  );
-  $form['usasearch_typeahead_options']['usasearch_affiliate_id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Type-ahead affiliate ID'),
-    '#default_value' => variable_get('usasearch_affiliate_id', ''),
-    '#size' => 4,
-    '#maxlength' => 4,
-    '#description' => t('Please enter the affiliate ID provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "77", to enable the type-ahead search suggestion feature on this Drupal site.', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
-    '#required' => FALSE,
-  );
-
   return system_settings_form($form);
 }
 
@@ -69,27 +45,20 @@ function usasearch_admin() {
 function usasearch_preprocess_page(&$variables) {
   // Declare the variable
   $inline_js = '';
-  // Check for usasearch_affiliate_id variable, if set output javascript and css references.
+  // Check for usasearch_affiliate_name variable, if set output javascript and css references.
   // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
-  if (variable_get('usasearch_affiliate_id', '')) {
-    // Add external scripts using drupal_add_js. Reference using protocol-less URLs. Defer loading.
-    drupal_add_js('//search.usa.gov/javascripts/jquery/jquery.autocomplete.min.js', array('type' => 'external', 'defer' => TRUE));
-    drupal_add_js('//search.usa.gov/javascripts/sayt.js', array('type' => 'external', 'defer' => TRUE));
+  if (variable_get('usasearch_affiliate_name', '')) {
+    $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
+    $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
 
-    // Add external css.
-    drupal_add_css('//search.usa.gov/stylesheets/compiled/sayt.css', array('type' => 'external', 'media' => 'all'));
-
-    // Check for usasearch_affiliate_id variable, if set output javascript inline with affilite id to limit suggestions.
-    if ($affiliate_id = check_plain(variable_get('usasearch_affiliate_id', ''))) {
-      $inline_js = "var usagov_sayt_url = 'http://search.usa.gov/sayt?aid=$affiliate_id&';";
+    $inline_js .= "var usasearch_config = { siteHandle:'$affiliate_name' };\n";
+    if ($action_domain != 'search.usa.gov') {
+      $inline_js .= "usasearch_config['host'] = '//$action_domain'\n";
     }
-  }
-  // Check for usasearch_discovery_tag variable, if set output javascript references.
-  if (variable_get('usasearch_discovery_tag', 1)) {
-    if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
-      $inline_js .= "var aid = '$affiliate_name';";
-      drupal_add_js('//search.usa.gov/javascripts/stats.js', array('type' => 'external', 'media' => 'all'));
-    }
+    $inline_js .= "var script = document.createElement('script');\n";
+    $inline_js .= "script.type = 'text/javascript';\n";
+    $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
+    $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
   }
   // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
   drupal_add_js($inline_js, 'inline');
@@ -179,7 +148,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
       $form['basic']['inline']['keys']['#name'] = 'query';
       unset($form['advanced']);
       // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_id', '')) {
+      if (variable_get('usasearch_affiliate_name', '')) {
         $form['basic']['inline']['keys']['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
       }
     }
@@ -188,7 +157,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
       $form[$form_id]['#name'] = 'query';
       $form[$form_id]['#title'] = t('Search using USASearch');
       // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_id', '')) {
+      if (variable_get('usasearch_affiliate_name', '')) {
         $form[$form_id]['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
       }
     }
