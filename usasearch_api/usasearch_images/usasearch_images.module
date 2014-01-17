@@ -26,3 +26,29 @@ function usasearch_images_search_execute($keys = NULL, $conditions = array()) {
 
   return $results;
 }
+
+/**
+ * Converts a USA Search result to a Drupal search result for images index.
+ *
+ * @param $result
+ * @param $module
+ * @return array
+ */
+function usasearch_images_result_images($result, $module) {
+  $protocol = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+
+  return array(
+    'title' => usasearch_api_replace_unicode_char($result['title']),
+    'link' => $protocol . $result['display_url'],
+    'module' => $module,
+    'thumbnail' => $result['thumbnail'],
+    'image_url' => $result['media_url'],
+    'snippet' => "<img src=\"{$result['thumbnail']['url']}\" class=\"thumbnail\" />",
+    'extra' => array(
+      'content_type' => $result['content_type'],
+      'file_size' => format_size($result['file_size']),
+      'dimensions' => $result['width'] . 'x' . $result['height'] . 'px',
+    ),
+    'type' => 'image',
+  );
+}

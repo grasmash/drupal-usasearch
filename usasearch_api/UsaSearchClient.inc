@@ -52,5 +52,4 @@ class UsaSearchClient extends Client {
 
     return $data;
   }
-
 }

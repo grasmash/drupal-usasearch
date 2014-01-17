@@ -5,10 +5,17 @@
  */
 function usasearch_api_search_info() {
   return array(
-    'title' => 'Content',
-    'path' => 'content',
+    'title' => 'All',
+    'path' => 'all',
     'conditions_callback' => 'usasearch_api_conditions',
   );
+}
+
+/**
+ * Implements hook_cron().
+ */
+function hook_cron() {
+  usasearch_api_fetch_logo();
 }
 
 /**
@@ -29,7 +36,6 @@ function usasearch_api_conditions() {
 
   return $conditions;
 }
-
 
 /**
  * Implements hook_search_execute().
@@ -67,45 +73,38 @@ function usasearch_api_get_results($keys, $conditions, $module) {
   }
   $results = array();
   if (!empty($response['total'])) {
+    module_load_include('inc', 'usasearch_api');
+
     // Now that we have the total number of results, initialize the pager.
     pager_default_initialize($response['total'], $num_per_page);
-    $protocol = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
 
     // Iterate over results and add to render array.
     foreach ($response['results'] as $key => $result) {
-      switch ($index) {
-        case 'web':
-          $results[] = array(
-            'title' => usasearch_api_replace_unicode_char($result['title']),
-            'link' => $result['unescapedUrl'],
-            'snippet' => usasearch_api_replace_unicode_char($result['content']),
-            'module' => $module,
-            'date' => $result['publishedAt'],
-            'type' => 'web',
-          );
-          break;
-
-        case 'images':
-          $results[] = array(
-            'title' => usasearch_api_replace_unicode_char($result['title']),
-            'link' => $protocol . $result['display_url'],
-            'module' => $module,
-            'thumbnail' => $result['thumbnail'],
-            'image_url' => $result['media_url'],
-            'snippet' => "<img src=\"{$result['thumbnail']['url']}\" class=\"thumbnail\" />",
-            'extra' => array(
-              'content_type' => $result['content_type'],
-              'file_size' => format_size($result['file_size']),
-              'dimensions' => $result['width'] . 'x' . $result['height'] . 'px',
-            ),
-            'type' => 'image',
-          );
-          break;
-      }
+      // E.g., usasearch_images_result_images() or usasearch_api_result_web().
+      $function = $module . '_result_' . $index;
+      $results[] = $function($result, $module);
     }
   }
 
   return $results;
+}
+
+/**
+ * Converts a USA Search result to a Drupal search result for web index.
+ *
+ * @param $result
+ * @param $module
+ * @return array
+ */
+function usasearch_api_result_web($result, $module) {
+  return array(
+    'title' => usasearch_api_replace_unicode_char($result['title']),
+    'link' => $result['unescapedUrl'],
+    'snippet' => usasearch_api_replace_unicode_char($result['content']),
+    'module' => $module,
+    'date' => $result['publishedAt'],
+    'type' => 'web',
+  );
 }
 
 /**
@@ -122,6 +121,9 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
       '#options' => array('' => 'none', 'test' => 'test'),
       '#default_value' => isset($_GET['dc']) ? $_GET['dc'] : 'none',
     );
+
+    module_load_include('inc', 'usasearch_api');
+
 
     // Replace the default submit function with our own.
     $form['#submit'][] = 'usasearch_api_search_form_submit';
@@ -195,22 +197,4 @@ function usasearch_api_preprocess_search_result(&$variables) {
   $variables['info_split'] = $info;
   $variables['info'] = implode(' - ', $info);
   $variables['theme_hook_suggestions'][] = 'search_result__' . $variables['module'];
-}
-
-/**
- * Converts the unicode characters "U+E000" and "U+E001" to <b> and </b> tags.
- *
- * @param $string
- *   The string containing unicode to be replaced.
- *
- * @return string
- *   The modified string.
- *
- */
-function usasearch_api_replace_unicode_char($string) {
-  // This is awful but I haven't found a better way that works.
-  $string = str_replace('', '<b>', $string);
-  $string = str_replace('', '</b>', $string);
-
-  return $string;
 }
