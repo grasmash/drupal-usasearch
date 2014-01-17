@@ -3,7 +3,3 @@ description = "Provides customized search using the General Services Administrat
 core = 7.x
 configure = admin/config/search/usasearch
 package = USASearch
-
-dependencies[] = search
-
-files[] = UsaSearchClient.inc

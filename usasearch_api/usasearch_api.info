@@ -1,0 +1,9 @@
+name = USASearch API
+description = Provides integration with USA Search its API.
+core = 7.x
+configure = admin/config/search/usasearch
+package = USASearch
+
+files[] = UsaSearchClient.inc
+dependencies[] = usasearch
+

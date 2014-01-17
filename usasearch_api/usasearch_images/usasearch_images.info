@@ -1,0 +1,9 @@
+name = USASearch Images
+description = Provides image search for the USA Search module.
+core = 7.x
+configure = admin/config/search/usasearch
+package = USASearch
+
+dependencies[] = usasearch
+
+files[] = UsaSearchClient.inc

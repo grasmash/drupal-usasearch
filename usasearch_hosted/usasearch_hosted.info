@@ -1,0 +1,7 @@
+name = USASearch Hosted
+description = Provides integration with USA Search via hosted search.
+core = 7.x
+configure = admin/config/search/usasearch
+package = USASearch
+
+dependencies[] = usasearch

@@ -1,0 +1,216 @@
+<?php
+
+/**
+ * Implements hook_search_info().
+ */
+function usasearch_api_search_info() {
+  return array(
+    'title' => 'Content',
+    'path' => 'content',
+    'conditions_callback' => 'usasearch_api_conditions',
+  );
+}
+
+/**
+ * Callback for conditions_callback property in hook_search_info().
+ */
+function usasearch_api_conditions() {
+  $conditions = array();
+
+  if (!empty($_REQUEST['keys'])) {
+    $conditions['keys'] = $_REQUEST['keys'];
+  }
+  if (!empty($_REQUEST['dc'])) {
+    $conditions['dc'] = $_REQUEST['dc'];
+  }
+  if (!empty($_REQUEST['sort_by'])) {
+    $conditions['sort_by'] = $_REQUEST['sort_by'];
+  }
+
+  return $conditions;
+}
+
+
+/**
+ * Implements hook_search_execute().
+ */
+function usasearch_api_search_execute($keys = NULL, $conditions = NULL) {
+  $module = 'usasearch_api';
+  $results = usasearch_api_get_results($keys, $conditions, $module);
+
+  return $results;
+}
+
+function usasearch_api_get_results($keys, $conditions, $module) {
+
+  // Set up vars.
+  $dc = isset($conditions['dc']) ? $conditions['dc'] : '';
+  $index = isset($conditions['index']) ? $conditions['index'] : 'web';
+  $num_per_page = variable_get('usasearch_results_per_page', 10);
+
+  // Drupal starts the page count at 0, whereas USA Search starts it at one.
+  // We need to add one to the value before making the API request.
+  $page = pager_find_page() + 1;
+
+  // Query the API.
+  $client = new UsaSearchClient();
+  $response = $client->search($keys, $dc, $page, $index);
+
+  // @todo Implement uses of these optional properties.
+  // $response['related'];
+  // $response['boosted_results'];
+
+  // Include a 'did you mean' suggestion if it was returned.
+  if (!empty($response['spelling_suggestion'])) {
+    //$options = array('query' => array('dc' => $dc));
+    //$output['search_form']['#suffix'] = t('Did you mean ') . l($response['spelling_suggestion'], 'search/content/' . $response['spelling_suggestion'], $options);
+  }
+  $results = array();
+  if (!empty($response['total'])) {
+    // Now that we have the total number of results, initialize the pager.
+    pager_default_initialize($response['total'], $num_per_page);
+    $protocol = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';
+
+    // Iterate over results and add to render array.
+    foreach ($response['results'] as $key => $result) {
+      switch ($index) {
+        case 'web':
+          $results[] = array(
+            'title' => usasearch_api_replace_unicode_char($result['title']),
+            'link' => $result['unescapedUrl'],
+            'snippet' => usasearch_api_replace_unicode_char($result['content']),
+            'module' => $module,
+            'date' => $result['publishedAt'],
+            'type' => 'web',
+          );
+          break;
+
+        case 'images':
+          $results[] = array(
+            'title' => usasearch_api_replace_unicode_char($result['title']),
+            'link' => $protocol . $result['display_url'],
+            'module' => $module,
+            'thumbnail' => $result['thumbnail'],
+            'image_url' => $result['media_url'],
+            'snippet' => "<img src=\"{$result['thumbnail']['url']}\" class=\"thumbnail\" />",
+            'extra' => array(
+              'content_type' => $result['content_type'],
+              'file_size' => format_size($result['file_size']),
+              'dimensions' => $result['width'] . 'x' . $result['height'] . 'px',
+            ),
+            'type' => 'image',
+          );
+          break;
+      }
+    }
+  }
+
+  return $results;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
+
+  if ($form_id == 'search_form') {
+    // The 'dc' element to specific document collections.
+    $form['dc'] = array(
+      '#type' => 'select',
+      '#title' => t('Collection'),
+      // @todo Replace this with values derived from an admin variable.
+      '#options' => array('' => 'none', 'test' => 'test'),
+      '#default_value' => isset($_GET['dc']) ? $_GET['dc'] : 'none',
+    );
+
+    // Replace the default submit function with our own.
+    $form['#submit'][] = 'usasearch_api_search_form_submit';
+    unset($form['#submit']['search_form_submit']);
+  }
+}
+
+/**
+ * Submit callback for search form when using API mode.
+ *
+ * This is very similar to search_form_submit, but it passes the additional
+ * 'dc' parameter.
+ *
+ * @see search_submit()
+ */
+function usasearch_api_search_form_submit($form, &$form_state) {
+
+  $keys = $form_state['values']['processed_keys'];
+  if ($keys == '') {
+    form_set_error('keys', t('Please enter some keywords.'));
+    // Fall through to the form redirect.
+  }
+
+  $destination = array($form_state['action'] . '/' . $keys);
+  if (!empty($form_state['values']['dc'])) {
+    $destination[1] = array(
+      'query' => array('dc' => $form_state['values']['dc']),
+    );
+  }
+
+  $form_state['redirect'] = $destination;
+}
+
+
+/**
+ * Implements template_preprocess_search_result().
+ *
+ * The primary purpose is to remove check_plain() from $result['title'] so
+ * that it may contain HTML like <b></b>. Otherwise, this is unchanged from
+ * original.
+ *
+ * @see template_preprocess_search_result().
+ */
+function usasearch_api_preprocess_search_result(&$variables) {
+  global $language;
+
+  $result = $variables['result'];
+  $variables['url'] = check_url($result['link']);
+  $variables['title'] = filter_xss($result['title'], array('b'));
+  if (isset($result['language']) && $result['language'] != $language->language && $result['language'] != LANGUAGE_NONE) {
+    $variables['title_attributes_array']['xml:lang'] = $result['language'];
+    $variables['content_attributes_array']['xml:lang'] = $result['language'];
+  }
+
+  $info = array();
+  if (!empty($result['module'])) {
+    $info['module'] = check_plain($result['module']);
+  }
+  if (!empty($result['user'])) {
+    $info['user'] = $result['user'];
+  }
+  if (!empty($result['date'])) {
+    $info['date'] = format_date($result['date'], 'short');
+  }
+  if (isset($result['extra']) && is_array($result['extra'])) {
+    $info = array_merge($info, $result['extra']);
+  }
+  // Check for existence. User search does not include snippets.
+  $variables['snippet'] = isset($result['snippet']) ? $result['snippet'] : '';
+  // Provide separated and grouped meta information..
+  $variables['info_split'] = $info;
+  $variables['info'] = implode(' - ', $info);
+  $variables['theme_hook_suggestions'][] = 'search_result__' . $variables['module'];
+}
+
+/**
+ * Converts the unicode characters "U+E000" and "U+E001" to <b> and </b> tags.
+ *
+ * @param $string
+ *   The string containing unicode to be replaced.
+ *
+ * @return string
+ *   The modified string.
+ *
+ */
+function usasearch_api_replace_unicode_char($string) {
+  // This is awful but I haven't found a better way that works.
+  $string = str_replace('', '<b>', $string);
+  $string = str_replace('', '</b>', $string);
+
+  return $string;
+}

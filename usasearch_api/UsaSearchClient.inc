@@ -35,12 +35,15 @@ class UsaSearchClient extends Client {
    * @return array
    *   The response, including results.
    */
-  public function search($query, $dc = '', $offset = 0) {
+  public function search($query, $dc = '', $page = 1, $index = 'web') {
+
+    // @todo Add ability to include 'index' and 'sort_by' parameters.
     $request = $this->get('search.json', array(), array(
       'query' => array(
         'query' => $query,
-        'page' => $offset,
+        'page' => $page,
         'dc' => $dc,
+        'index' => $index,
       ),
     ));
 
