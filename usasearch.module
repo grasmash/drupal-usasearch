@@ -5,37 +5,14 @@
  */
 
 /**
- * System settings form for USASearch.
+ * Implements hook_search_info().
  */
-function usasearch_admin() {
-  $form = array();
-
-  $form['usasearch_affiliate_name'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Affiliate name'),
-    '#default_value' => variable_get('usasearch_affiliate_name', ''),
-    '#size' => 30,
-    '#maxlength' => 30,
-    '#description' => t('Please enter your affiliate name provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "example.gov".', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
-    '#required' => TRUE,
+function usasearch_search_info() {
+  return array(
+    'title' => 'Content',
+    'path' => 'content',
+    //'conditions_callback' => 'callback_search_conditions',
   );
-  $form['usasearch_action_domain'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Search domain'),
-    '#default_value' => variable_get('usasearch_action_domain', 'search.usa.gov'),
-    '#size' => 30,
-    '#maxlength' => 50,
-    '#description' => t('You may enter a custom search domain, eg. "search.commerce.gov", or leave the default "search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
-    '#required' => FALSE,
-  );
-  $form['usasearch_search_page'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Keep Drupal search page'),
-    '#default_value' => variable_get('usasearch_search_page', 0),
-    '#description' => t("To make best use of the USASearch module on your site the 'Search box' option should be enabled in the <a href='@usasearch_theme_settings'>global theme settings</a> or in your default theme settings or the search block placed on your site. Check this option if you want to keep the Drupal search page instead of redirecting this to USASearch. If you do neither of these the USASearch module won't be of much use. <strong>NOTE: You must clear your menu cache if you enable this setting.</strong>", array('@usasearch_theme_settings' => url('admin/build/themes/settings'))),
-    '#required' => FALSE,
-  );
-  return system_settings_form($form);
 }
 
 /**
@@ -43,43 +20,28 @@ function usasearch_admin() {
  * To output required javascript and css references.
  */
 function usasearch_preprocess_page(&$variables) {
-  // Declare the variable
-  $inline_js = '';
-  // Check for usasearch_affiliate_name variable, if set output javascript and css references.
-  // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
-  if (variable_get('usasearch_affiliate_name', '')) {
-    $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
-    $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
+  module_load_include('inc', 'usasearch');
+  $mode = usasearch_get_mode();
+  if ($mode == 'redirect') {
+    // Declare the variable
+    $inline_js = '';
+    // Check for usasearch_affiliate_name variable, if set output javascript and css references.
+    // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
+    if (variable_get('usasearch_affiliate_name', '')) {
+      $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
+      $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
 
-    $inline_js .= "var usasearch_config = { siteHandle:'$affiliate_name' };\n";
-    if ($action_domain != 'search.usa.gov') {
-      $inline_js .= "usasearch_config['host'] = '//$action_domain'\n";
+      $inline_js .= "var usasearch_config = { siteHandle:'$affiliate_name' };\n";
+      if ($action_domain != 'search.usa.gov') {
+        $inline_js .= "usasearch_config['host'] = '//$action_domain'\n";
+      }
+      $inline_js .= "var script = document.createElement('script');\n";
+      $inline_js .= "script.type = 'text/javascript';\n";
+      $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
+      $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
     }
-    $inline_js .= "var script = document.createElement('script');\n";
-    $inline_js .= "script.type = 'text/javascript';\n";
-    $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
-    $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
-  }
-  // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
-  drupal_add_js($inline_js, 'inline');
-}
-
-/**
- * Page callback function to redirect requests to usasearch.
- */
-function usasearch_redirect_to_usasearch($query = '') {
-  // Set action_domain from variables table or default to search.usa.gov.
-  $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
-  // Set affiliate_name from variables table, checking for a value using ternary operator.
-  $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
-  // Set action_protocol from server globals, checking for a value using ternary operator.
-  $action_protocol = isset($_SERVER['HTTPS']) ? 'https' : 'http';
-  // Check for query terms and use them in redirect if there.
-  if ($query) {
-    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('query' => filter_xss($query), 'affiliate' => $affiliate_name)));
-  }
-  else {
-    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('affiliate' => $affiliate_name)));
+    // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
+    drupal_add_js($inline_js, 'inline');
   }
 }
 
@@ -97,69 +59,163 @@ function usasearch_menu() {
     'page arguments' => array('usasearch_admin'),
     'access arguments' => array('administer search'),
     'type' => MENU_NORMAL_ITEM,
+    'file' => 'usasearch.admin.inc',
   );
   return $items;
 }
 
 /**
  * Implements hook_menu_alter().
- * Point /search and /search/node/% paths to callback which redirects to usasearch.
+ * Point /search and /search/node/% paths to new callbacks.
  */
 function usasearch_menu_alter(&$items) {
   if (!variable_get('usasearch_search_page', 0)) {
     $items['search'] = array(
       'access arguments' => array('search content'),
       'description' => 'Search Results',
-      'page callback' => 'usasearch_redirect_to_usasearch',
+      'page callback' => 'usasearch_page',
       'type' => MENU_CALLBACK,
+      'file' => drupal_get_path('module', 'usasearch') . '/usasearch.pages.inc',
     );
 
-    $items['search/node/%'] = array(
+    $items['search/content/%'] = array(
       'access arguments' => array('search content'),
       'description' => 'Search Results',
-      'page callback' => 'usasearch_redirect_to_usasearch',
+      'page callback' => 'usasearch_page',
       'page arguments' => array(2),
       'type' => MENU_CALLBACK,
+      'file' => drupal_get_path('module', 'usasearch') . '/usasearch.pages.inc',
     );
   }
 }
 
 /**
  * Implements hook_form_alter().
+ *
  * Changes elements in the search block, search theme form, search page form.
  */
 function usasearch_form_alter(&$form, &$form_state, $form_id) {
+
   // Search block and search box have similar form structure.
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
-    // Set action method, location and read affiliate from variable.
-    $form['#method'] = 'get';
-    $form['#action'] = '//' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
-    // Check for affiliate_name variable before printing the affiliate form element.
-    if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
-      $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
-    }
-    // Remove unnecessary, hidden input fields.
-    unset($form['form_build_id']);
-    unset($form['form_token']);
-    unset($form['form_id']);
+    module_load_include('inc', 'usasearch');
+    $mode = usasearch_get_mode();
 
-    if ($form_id == 'search_form') {
-      // Change text field name to query and unset advanced search in search_form.
-      $form['basic']['inline']['keys']['#name'] = 'query';
-      unset($form['advanced']);
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_name', '')) {
-        $form['basic']['inline']['keys']['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
-      }
+    $url = drupal_parse_url(current_path());
+
+    // API mode search.
+    if ($mode == 'api') {
+      // The 'dc' element to specific document collections.
+      $form['dc'] = array(
+        '#type' => 'select',
+        '#title' => t('Collection'),
+        // @todo Replace this with values derived from an admin variable.
+        '#options' => array('' => 'none', 'test' => 'test'),
+        '#default_value' => isset($url['query']['dc']) ? $url['query']['dc'] : 'none',
+      );
+
+      // Replace the default submit function with our own.
+      $form['#submit'][] = 'usasearch_search_form_submit';
+      unset($form['#submit']['search_form_submit']);
     }
+    // Redirect mode search.
     else {
-      // Change text field name to query and title in search_block_form and search_theme_form.
-      $form[$form_id]['#name'] = 'query';
-      $form[$form_id]['#title'] = t('Search using USASearch');
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_name', '')) {
-        $form[$form_id]['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
+      // Set action method, location and read affiliate from variable.
+      $form['#method'] = 'get';
+      $form['#action'] = '//' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
+      // Check for affiliate_name variable before printing the affiliate form element.
+      if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
+        $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
+      }
+      // Remove unnecessary, hidden input fields.
+      unset($form['form_build_id']);
+      unset($form['form_token']);
+      unset($form['form_id']);
+
+      if ($form_id == 'search_form') {
+        // Change text field name to query and unset advanced search in search_form.
+        $form['basic']['inline']['keys']['#name'] = 'query';
+        unset($form['advanced']);
+        // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
+        if (variable_get('usasearch_affiliate_name', '')) {
+          $form['basic']['inline']['keys']['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
+        }
+      }
+      else {
+        // Change text field name to query and title in search_block_form and search_theme_form.
+        $form[$form_id]['#name'] = 'query';
+        $form[$form_id]['#title'] = t('Search using USASearch');
+        // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
+        if (variable_get('usasearch_affiliate_name', '')) {
+          $form[$form_id]['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
+        }
       }
     }
   }
+}
+
+/**
+ * Submit callback for search form when using API mode.
+ *
+ * This is very similar to search_form_submit, but it passes the additional
+ * 'dc' parameter.
+ *
+ * @see search_submit()
+ */
+function usasearch_search_form_submit($form, &$form_state) {
+  $keys = $form_state['values']['processed_keys'];
+  if ($keys == '') {
+    form_set_error('keys', t('Please enter some keywords.'));
+    // Fall through to the form redirect.
+  }
+
+  $destination = array($form_state['action'] . '/' . $keys);
+  if (!empty($form_state['values']['dc'])) {
+    $destination[1] = array(
+      'query' => array('dc' => $form_state['values']['dc']),
+    );
+  }
+
+  $form_state['redirect'] = $destination;
+}
+
+/**
+ * Implements template_preprocess_search_result().
+ *
+ * The primary purpose is to remove check_plain() from $result['title'] so
+ * that it may contain HTML like <b></b>. Otherwise, this is unchanged from
+ * original.
+ *
+ * @see template_preprocess_search_result().
+ */
+function usasearch_preprocess_search_result(&$variables) {
+  global $language;
+
+  $result = $variables['result'];
+  $variables['url'] = check_url($result['link']);
+  $variables['title'] = filter_xss($result['title'], array('b'));
+  if (isset($result['language']) && $result['language'] != $language->language && $result['language'] != LANGUAGE_NONE) {
+    $variables['title_attributes_array']['xml:lang'] = $result['language'];
+    $variables['content_attributes_array']['xml:lang'] = $result['language'];
+  }
+
+  $info = array();
+  if (!empty($result['module'])) {
+    $info['module'] = check_plain($result['module']);
+  }
+  if (!empty($result['user'])) {
+    $info['user'] = $result['user'];
+  }
+  if (!empty($result['date'])) {
+    $info['date'] = format_date($result['date'], 'short');
+  }
+  if (isset($result['extra']) && is_array($result['extra'])) {
+    $info = array_merge($info, $result['extra']);
+  }
+  // Check for existence. User search does not include snippets.
+  $variables['snippet'] = isset($result['snippet']) ? $result['snippet'] : '';
+  // Provide separated and grouped meta information..
+  $variables['info_split'] = $info;
+  $variables['info'] = implode(' - ', $info);
+  $variables['theme_hook_suggestions'][] = 'search_result__' . $variables['module'];
 }

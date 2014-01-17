@@ -5,3 +5,5 @@ configure = admin/config/search/usasearch
 package = USASearch
 
 dependencies[] = search
+
+files[] = UsaSearchClient.inc
