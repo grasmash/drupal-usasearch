@@ -1,0 +1,47 @@
+<?php
+
+/**
+ * @file
+ * Provides image search for the USA Search module.
+ */
+
+/**
+ * Implements hook_search_info().
+ */
+function usasearch_news_search_info() {
+  return array(
+    'title' => 'News',
+    'path' => 'news',
+    'conditions_callback' => 'usasearch_api_conditions',
+  );
+}
+
+/**
+ * Implements hook_search_execute().
+ */
+function usasearch_news_search_execute($keys = NULL, $conditions = array()) {
+  module_load_include('inc', 'usasearch_api');
+  $conditions['index'] = 'news';
+  $module = 'usasearch_news';
+  $results = usasearch_api_get_results($keys, $conditions, $module);
+
+  return $results;
+}
+
+/**
+ * Converts a USA Search result to a Drupal search result for news index.
+ *
+ * @param $result
+ * @param $module
+ * @return array
+ */
+function usasearch_news_result_news($result, $module) {
+  return array(
+    'title' => usasearch_api_replace_unicode_char($result['title']),
+    'link' => $result['link'],
+    'snippet' => usasearch_api_replace_unicode_char($result['content']),
+    'module' => $module,
+    'date' => usasearch_api_utc_to_unix_timestamp($result['publishedAt']),
+    'type' => 'docs',
+  );
+}

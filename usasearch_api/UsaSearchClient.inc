@@ -23,21 +23,25 @@ class UsaSearchClient extends Client {
   /**
    * Sends a search request.
    *
-   * @param $query
+   * @param string $query
    *   The string of keywords.
    *
    * @param string $dc
-   *   The document collection.
+   *   (optional) The document collection. Defaults to none.
    *
-   * @param int $offset
-   *   The resultset offset, used for pagination.
+   * @param int $page
+   *   (optional). The search result page offset, used for pagination.
+   *   Defaults to 1.
+   *
+   * @param string $index
+   *   (optional) The USASearch index to search. Default to 'web'.
    *
    * @return array
    *   The response, including results.
    */
   public function search($query, $dc = '', $page = 1, $index = 'web') {
 
-    // @todo Add ability to include 'index' and 'sort_by' parameters.
+    // @todo Add ability to include 'sort_by' parameter.
     $request = $this->get('search.json', array(), array(
       'query' => array(
         'query' => $query,

@@ -20,6 +20,7 @@ function usasearch_docs_search_info() {
  * Implements hook_search_execute().
  */
 function usasearch_docs_search_execute($keys = NULL, $conditions = array()) {
+  module_load_include('inc', 'usasearch_api');
   $conditions['index'] = 'docs';
   $module = 'usasearch_docs';
   $results = usasearch_api_get_results($keys, $conditions, $module);
@@ -40,7 +41,36 @@ function usasearch_docs_result_docs($result, $module) {
     'link' => $result['unescapedUrl'],
     'snippet' => usasearch_api_replace_unicode_char($result['content']),
     'module' => $module,
-    'date' => $result['publishedAt'],
+    'date' => usasearch_api_utc_to_unix_timestamp($result['publishedAt']),
     'type' => 'docs',
   );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function usasearch_docs_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'search_form' && $form['module']['#value'] == 'usasearch_docs') {
+    // The 'dc' element to specific document collections.
+    $form['dc'] = array(
+      '#type' => 'select',
+      '#title' => t('Collection'),
+      // @todo Replace this with values derived from an admin variable.
+      '#options' => array('' => 'none', 'test' => 'test'),
+      '#default_value' => isset($_GET['dc']) ? $_GET['dc'] : 'none',
+    );
+
+    $form['#validate'][] = 'usasearch_docs_search_form_validate';
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function usasearch_docs_search_form_validate(&$form, &$form_state) {
+  if (!empty($form_state['values']['dc'])) {
+    // Add value to $form_state['redirect_query'], which will be used to
+    // set the form destination in usasearch_api_search_form_submit().
+    $form_state['redirect_query']['dc'] = $form_state['values']['dc'];
+  }
 }

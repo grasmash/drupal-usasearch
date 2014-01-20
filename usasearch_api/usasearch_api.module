@@ -41,70 +41,11 @@ function usasearch_api_conditions() {
  * Implements hook_search_execute().
  */
 function usasearch_api_search_execute($keys = NULL, $conditions = NULL) {
+  module_load_include('inc', 'usasearch_api');
   $module = 'usasearch_api';
   $results = usasearch_api_get_results($keys, $conditions, $module);
 
   return $results;
-}
-
-function usasearch_api_get_results($keys, $conditions, $module) {
-
-  // Set up vars.
-  $dc = isset($conditions['dc']) ? $conditions['dc'] : '';
-  $index = isset($conditions['index']) ? $conditions['index'] : 'web';
-  $num_per_page = variable_get('usasearch_results_per_page', 10);
-
-  // Drupal starts the page count at 0, whereas USA Search starts it at one.
-  // We need to add one to the value before making the API request.
-  $page = pager_find_page() + 1;
-
-  // Query the API.
-  $client = new UsaSearchClient();
-  $response = $client->search($keys, $dc, $page, $index);
-
-  // @todo Implement uses of these optional properties.
-  // $response['related'];
-  // $response['boosted_results'];
-
-  // Include a 'did you mean' suggestion if it was returned.
-  if (!empty($response['spelling_suggestion'])) {
-    //$options = array('query' => array('dc' => $dc));
-    //$output['search_form']['#suffix'] = t('Did you mean ') . l($response['spelling_suggestion'], 'search/content/' . $response['spelling_suggestion'], $options);
-  }
-  $results = array();
-  if (!empty($response['total'])) {
-    module_load_include('inc', 'usasearch_api');
-
-    // Now that we have the total number of results, initialize the pager.
-    pager_default_initialize($response['total'], $num_per_page);
-
-    // Iterate over results and add to render array.
-    foreach ($response['results'] as $key => $result) {
-      // E.g., usasearch_images_result_images() or usasearch_api_result_web().
-      $function = $module . '_result_' . $index;
-      $results[] = $function($result, $module);
-    }
-  }
-
-  return $results;
-}
-
-/**
- * Converts a USA Search result to a Drupal search result for web index.
- *
- * @param $result
- * @param $module
- * @return array
- */
-function usasearch_api_result_web($result, $module) {
-  return array(
-    'title' => usasearch_api_replace_unicode_char($result['title']),
-    'link' => $result['unescapedUrl'],
-    'snippet' => usasearch_api_replace_unicode_char($result['content']),
-    'module' => $module,
-    'date' => $result['publishedAt'],
-    'type' => 'web',
-  );
 }
 
 /**
@@ -113,17 +54,48 @@ function usasearch_api_result_web($result, $module) {
 function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'search_form') {
-    // The 'dc' element to specific document collections.
-    $form['dc'] = array(
-      '#type' => 'select',
-      '#title' => t('Collection'),
-      // @todo Replace this with values derived from an admin variable.
-      '#options' => array('' => 'none', 'test' => 'test'),
-      '#default_value' => isset($_GET['dc']) ? $_GET['dc'] : 'none',
-    );
-
     module_load_include('inc', 'usasearch_api');
+    ctools_include('object-cache');
+    $response = ctools_object_cache_get('search_response', 'usasearch_api');
 
+    if (!empty($response)) {
+      $params = drupal_get_query_parameters();
+      $link_options = array('query' => $params);
+
+      // Include a 'did you mean' spelling suggestion if it was returned.
+      // @todo Add variable to enable or disable this.
+      if (!empty($response['spelling_suggestion'])) {
+        $suggestion = check_plain($response['spelling_suggestion']);
+        $suggestion_link =  l($suggestion, $form_state['action'] . '/'. $suggestion, $link_options);
+        $form['spelling_suggestion'] = array(
+          '#markup' => t('Did you mean !suggestion?', array('!suggestion' => $suggestion_link)),
+        );
+      }
+
+      // Include 'related search' fieldset if it was returned.
+      // @todo Add variable to enable or disable this.
+      if (!empty($response['related'])) {
+        $form['related'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Related Searches'),
+        );
+        foreach ($response['related'] as $key => $related) {
+          $related_link = l(check_plain($related), $form_state['action'] . '/'. check_plain($related), $link_options);
+          $form['related'][$key] = array(
+            '#prefix' => '<div class="related-search">',
+            '#markup' => $related_link,
+            '#suffix' => '</div>',
+          );
+        }
+      }
+
+      // Display for web, docs, and image searches. This is required by the
+      // USASearch Terms of Service.
+      if (in_array($form['module']['#value'], array('usasearch_api', 'usasearch_docs', 'usasearch_images'))) {
+        $form['logo'] = usasearch_api_logo();
+        $form['logo']['#weight'] = 100;
+      }
+    }
 
     // Replace the default submit function with our own.
     $form['#submit'][] = 'usasearch_api_search_form_submit';
@@ -147,11 +119,17 @@ function usasearch_api_search_form_submit($form, &$form_state) {
     // Fall through to the form redirect.
   }
 
+  // Clear previous search result cache.
+  ctools_include('object-cache');
+  ctools_object_cache_clear('search_response', 'usasearch_api');
+
+  // Create destination.
   $destination = array($form_state['action'] . '/' . $keys);
-  if (!empty($form_state['values']['dc'])) {
-    $destination[1] = array(
-      'query' => array('dc' => $form_state['values']['dc']),
-    );
+  if (!empty($form_state['redirect_query'])) {
+    $destination[1]['query'] = array();
+    foreach ($form_state['redirect_query'] as $key => $value) {
+      $destination[1]['query'][$key] = $value;
+    }
   }
 
   $form_state['redirect'] = $destination;
@@ -197,4 +175,38 @@ function usasearch_api_preprocess_search_result(&$variables) {
   $variables['info_split'] = $info;
   $variables['info'] = implode(' - ', $info);
   $variables['theme_hook_suggestions'][] = 'search_result__' . $variables['module'];
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function usasearch_api_block_info() {
+
+  $blocks['usasearch_boosted_results'] = array(
+    'info' => t('USASearch: Boosted Results'),
+    'cache' => DRUPAL_NO_CACHE,
+    'pages' => 'search/*',
+  );
+
+  return $blocks;
+}
+
+
+/**
+ * Implements hook_block_view().
+ */
+function usasearch_api_block_view($delta = '') {
+  switch ($delta) {
+    case 'usasearch_boosted_results':
+      ctools_include('object-cache');
+      $response = ctools_object_cache_get('search_response', 'usasearch_api');
+
+      $block['subject'] = t('Boosted Results');
+
+      // @todo theme boosted results.
+      //$block['content'] = usasearch_format_boosted_results();
+      $block['content'] = '';
+      break;
+  }
+  return $block;
 }

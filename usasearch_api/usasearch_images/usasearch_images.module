@@ -20,6 +20,7 @@ function usasearch_images_search_info() {
  * Implements hook_search_execute().
  */
 function usasearch_images_search_execute($keys = NULL, $conditions = array()) {
+  module_load_include('inc', 'usasearch_api');
   $conditions['index'] = 'images';
   $module = 'usasearch_images';
   $results = usasearch_api_get_results($keys, $conditions, $module);
