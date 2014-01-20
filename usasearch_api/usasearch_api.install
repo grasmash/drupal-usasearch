@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Install file for USA Search API module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function usasearch_api_requirements($phase) {
+  $t = get_t();
+
+  $requirements = array();
+  if (module_exists('usasearch_api') && module_exists('usasearch_hosted')) {
+    $message = $t('USASearch API and USASearch Hosted cannot be enabled at the same time. Please disable one immediately.');
+    $requirements['usasearch'] = array(
+      'title' => $t('USA Search'),
+      'description' => $message,
+      'value' => $t('Module conflict!'),
+      'severity' => REQUIREMENT_ERROR,
+    );
+
+    drupal_set_message($message, 'error');
+  }
+  return $requirements;
+}

@@ -5,51 +5,21 @@
  * Point /search and /search/node/% paths to new callbacks.
  */
 function usasearch_hosted_menu_alter(&$items) {
-  if (!variable_get('usasearch_search_page', 0)) {
-    $items['search'] = array(
-      'access arguments' => array('search content'),
-      'description' => 'Search Results',
-      'page callback' => 'usasearch_redirect',
-      'type' => MENU_CALLBACK,
-      'file' => drupal_get_path('module', 'usasearch') . '/usasearch.pages.inc',
-    );
-
-    $items['search/content/%'] = array(
-      'access arguments' => array('search content'),
-      'description' => 'Search Results',
-      'page callback' => 'usasearch_redirect',
-      'page arguments' => array(2),
-      'type' => MENU_CALLBACK,
-      'file' => drupal_get_path('module', 'usasearch') . '/usasearch.pages.inc',
-    );
-  }
-}
-
-/**
- * Implements hook_preprocess_page().
- * To output required javascript and css references.
- */
-function usasearch_hosted_preprocess_page(&$variables) {
-  module_load_include('inc', 'usasearch');
-  // Declare the variable
-  $inline_js = '';
-  // Check for usasearch_affiliate_name variable, if set output javascript and css references.
-  // Detailed info about this USASearch feature here: http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
-  if (variable_get('usasearch_affiliate_name', '')) {
-    $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
-    $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
-
-    $inline_js .= "var usasearch_config = { siteHandle:'$affiliate_name' };\n";
-    if ($action_domain != 'search.usa.gov') {
-      $inline_js .= "usasearch_config['host'] = '//$action_domain'\n";
-    }
-    $inline_js .= "var script = document.createElement('script');\n";
-    $inline_js .= "script.type = 'text/javascript';\n";
-    $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
-    $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
-  }
-  // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
-  drupal_add_js($inline_js, 'inline');
+  $items['search'] = array(
+    'access arguments' => array('search content'),
+    'description' => 'Search Results',
+    'page callback' => 'usasearch_hosted_redirect',
+    'type' => MENU_CALLBACK,
+    'file' => drupal_get_path('module', 'usasearch_hosted') . '/usasearch_hosted.inc',
+  );
+  $items['search/*'] = array(
+    'access arguments' => array('search content'),
+    'description' => 'Search Results',
+    'page callback' => 'usasearch_hosted_redirect',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'file' => drupal_get_path('module', 'usasearch_hosted') . '/usasearch_hosted.inc',
+  );
 }
 
 /**
@@ -61,60 +31,32 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
 
   // Search block and search box have similar form structure.
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
-    module_load_include('inc', 'usasearch');
-    $mode = usasearch_get_mode();
+    $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
+    $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
 
     // Set action method, location and read affiliate from variable.
     $form['#method'] = 'get';
-    $form['#action'] = '//' . check_plain(variable_get('usasearch_action_domain', 'search.usa.gov')) . '/search';
+    $form['#action'] = '//' . $action_domain . '/search';
+
     // Check for affiliate_name variable before printing the affiliate form element.
-    if ($affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''))) {
+    if ($affiliate_name) {
       $form['affiliate'] = array('#type' => 'hidden', '#value' => $affiliate_name);
     }
+
     // Remove unnecessary, hidden input fields.
     unset($form['form_build_id']);
     unset($form['form_token']);
     unset($form['form_id']);
 
     if ($form_id == 'search_form') {
-      // Change text field name to query and unset advanced search in search_form.
-      $form['basic']['inline']['keys']['#name'] = 'query';
+      // Change text field name to query.
+      $form['basic']['keys']['#attributes']['name'] = 'query';
+      // Unset 'advanced' fieldset.
       unset($form['advanced']);
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_name', '')) {
-        $form['basic']['inline']['keys']['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
-      }
     }
     else {
-      // Change text field name to query and title in search_block_form and search_theme_form.
-      $form[$form_id]['#name'] = 'query';
-      $form[$form_id]['#title'] = t('Search using USASearch');
-      // Add autocomplete classes and set autocomplete HTML attribute to off on text field for type-ahead feature.
-      if (variable_get('usasearch_affiliate_name', '')) {
-        $form[$form_id]['#attributes'] = array('class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'), 'autocomplete' => 'off');
-      }
+      // Change text field name to query.
+      $form[$form_id]['#attributes']['name'] = 'query';
     }
-  }
-}
-
-/**
- * Page callback function to redirect requests to usasearch.
- *
- * @param string $query
- *   The search query string taken from the request URL.
- */
-function usasearch_hosted_redirect($query) {
-  // Set action_domain from variables table or default to search.usa.gov.
-  $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
-  // Set affiliate_name from variables table, checking for a value using ternary operator.
-  $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
-  // Set action_protocol from server globals, checking for a value using ternary operator.
-  $action_protocol = isset($_SERVER['HTTPS']) ? 'https' : 'http';
-  // Check for query terms and use them in redirect if there.
-  if ($query) {
-    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('query' => $query, 'affiliate' => $affiliate_name)));
-  }
-  else {
-    drupal_goto("$action_protocol://$action_domain/search", array('query' => array('affiliate' => $affiliate_name)));
   }
 }
