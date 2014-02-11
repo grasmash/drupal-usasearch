@@ -141,9 +141,8 @@ function usasearch_api_fetch_logo() {
  *
  */
 function usasearch_api_replace_unicode_char($string) {
-  // This is awful but I haven't found a better way that works.
-  $string = str_replace('', '<b>', $string);
-  $string = str_replace('', '</b>', $string);
+  $string = preg_replace('/\x{e000}/u', '<strong>', $string);
+  $string = preg_replace('/\x{e001}/u', '</strong>', $string);
 
   return $string;
 }

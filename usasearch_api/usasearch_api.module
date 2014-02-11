@@ -55,6 +55,9 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'search_form') {
     module_load_include('inc', 'usasearch_api');
+
+    // Get cached response object. We do not clear the cached object here,
+    // because it may be needed by usasearch_api_block_view().
     ctools_include('object-cache');
     $response = ctools_object_cache_get('search_response', 'usasearch_api');
 
@@ -118,10 +121,6 @@ function usasearch_api_search_form_submit($form, &$form_state) {
     form_set_error('keys', t('Please enter some keywords.'));
     // Fall through to the form redirect.
   }
-
-  // Clear previous search result cache.
-  ctools_include('object-cache');
-  ctools_object_cache_clear('search_response', 'usasearch_api');
 
   // Create destination.
   $destination = array($form_state['action'] . '/' . $keys);
@@ -209,4 +208,17 @@ function usasearch_api_block_view($delta = '') {
       break;
   }
   return $block;
+}
+
+/**
+ * Implements hook_exit().
+ */
+function usasearch_api_exit() {
+  // If we're on a search page, clear the search response cache.
+  // This triggers even on cached pages.
+  // @todo Look into moving this to hook_init(), or improving performance.
+  if (strpos(current_path(), 'search/') === 0) {
+    ctools_include('object-cache');
+    ctools_object_cache_clear('search_response', 'usasearch_api');
+  }
 }
