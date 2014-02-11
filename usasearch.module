@@ -39,7 +39,10 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
         'class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'),
         'autocomplete' => 'off',
         'type ' => 'text',
-        'id' => 'query',
+        // Adding the id attribute can cause issues that rely on default Drupal
+        // ids for form elements. It does not appear to be necessary for
+        // typeahead to function. So, we leave it out.
+        // 'id' => 'query',
       );
 
       // Apply attriubutes to the correct form element.
@@ -82,5 +85,5 @@ function usasearch_preprocess_page(&$variables) {
     $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
   }
   // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
-  drupal_add_js($inline_js, 'inline');
+  drupal_add_js($inline_js, array('type' => 'inline', 'scope' => 'footer'));
 }
