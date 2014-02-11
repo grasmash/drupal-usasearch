@@ -67,6 +67,10 @@ Place the usasearch directory in your sites/all/modules directory.
 Enable the USASearch API or USASearch hosted module at admin/modules.
 Configure it at admin/config/search/usasearch.
 
+# API Search - usasearch_api
+This module depends on composer_manager, which will manage the PHP library
+dependencies. Namely, it will download Guzzle to the sites/all/vendor directory.
+
 To configure this module, you will need your USASearch's unique
 Affiliate name.  Login at https://search.usa.gov/affiliates and
 click the "View Current" link next to the affiliate you want to
