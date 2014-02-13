@@ -2,7 +2,7 @@
 
 /**
  * @file
- * USA Search API search module.
+ * USA Search AP
  */
 
 /**
@@ -89,10 +89,9 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
       '#markup' => l(t('Advanced Search'), 'search/advanced', $advanced_link_options),
     );
 
-    // Get cached response object. We do not clear the cached object here,
-    // because it may be needed by usasearch_api_block_view().
-    ctools_include('object-cache');
-    $response = ctools_object_cache_get('search_response', 'usasearch_api');
+    // Load response from static cache.
+    // This relies on usasearch_api_request() having been already called.
+    $response = &drupal_static('usasearch_api_request');
 
     if (!empty($response)) {
       module_load_include('inc', 'usasearch_api');
@@ -236,27 +235,13 @@ function usasearch_api_block_view($delta = '') {
   switch ($delta) {
     case 'usasearch_boosted_results':
       ctools_include('object-cache');
-      $response = ctools_object_cache_get('search_response', 'usasearch_api');
+      $response = &drupal_static('usasearch_api_request');
 
       $block['subject'] = t('Boosted Results');
-
       // @todo theme boosted results.
       // $block['content'] = usasearch_format_boosted_results();
       $block['content'] = '';
       break;
   }
   return $block;
-}
-
-/**
- * Implements hook_exit().
- */
-function usasearch_api_exit() {
-  // If we're on a search page, clear the search response cache.
-  // This triggers even on cached pages.
-  // @todo Look into moving this to hook_init(), or improving performance.
-  if (strpos(current_path(), 'search/') === 0) {
-    ctools_include('object-cache');
-    ctools_object_cache_clear('search_response', 'usasearch_api');
-  }
 }

@@ -102,7 +102,7 @@ function usasearch_api_advanced_form_submit($form, &$form_state) {
 function usasearch_api_get_results($keys, $conditions, $module) {
 
   // Set up vars.
-  $dc = isset($conditions['dc']) ? $conditions['dc'] : '';
+  $doc_collection = isset($conditions['dc']) ? $conditions['dc'] : '';
   $index = isset($conditions['index']) ? $conditions['index'] : 'web';
   $num_per_page = variable_get('usasearch_results_per_page', 10);
 
@@ -110,24 +110,12 @@ function usasearch_api_get_results($keys, $conditions, $module) {
   // We need to add one to the value before making the API request.
   $page = pager_find_page() + 1;
 
-  // Query the API.
-  try {
-    $client = new UsaSearchClient();
-    $response = $client->search($keys, $dc, $page, $index);
-  }
-  catch (Exception $e) {
-    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
-    drupal_set_message(t('An error occurred when attempting to process your search request. Please try again.'), 'error');
-  }
+  // Query the USA Search API.
+  $response = usasearch_api_request($keys, $doc_collection, $page, $index);
 
+  // Build results and pager.
   $results = array();
   if (!empty($response['total'])) {
-    module_load_include('inc', 'usasearch_api');
-
-    // We temporarily cache the response so that it can be used to in a
-    // subsequent hook_form_alter() implementation.
-    ctools_include('object-cache');
-    ctools_object_cache_set('search_response', 'usasearch_api', $response);
 
     // Now that we have the total number of results, initialize the pager.
     pager_default_initialize($response['total'], $num_per_page);
@@ -141,6 +129,29 @@ function usasearch_api_get_results($keys, $conditions, $module) {
   }
 
   return $results;
+}
+
+/**
+ * Makes a search request to the USA Search API.
+ */
+function usasearch_api_request($keys, $doc_collection, $page, $index) {
+
+  $response = &drupal_static(__FUNCTION__);
+  if (isset($response)) {
+    return $response;
+  }
+
+  // Query the API.
+  try {
+    $client = new UsaSearchClient();
+    $response = $client->search($keys, $doc_collection, $page, $index);
+  }
+  catch (Exception $e) {
+    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
+    drupal_set_message(t('An error occurred when attempting to process your search request. Please try again.'), 'error');
+  }
+
+  return $response;
 }
 
 /**
