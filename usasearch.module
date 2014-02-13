@@ -1,12 +1,11 @@
 <?php
 /**
  * @file
- * Replaces Drupal search, redirects all search queries to USASearch service (http://search.usa.gov).
+ * Replaces Drupal search, redirects all search queries to USASearch service.
  */
 
 /**
  * Implements hook_menu().
- * Adds admin screen under settings.
  */
 function usasearch_menu() {
   $items = array();
@@ -17,7 +16,6 @@ function usasearch_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_admin'),
     'access arguments' => array('administer search'),
-    'type' => MENU_NORMAL_ITEM,
     'file' => 'usasearch.admin.inc',
   );
   return $items;
@@ -36,7 +34,9 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
 
       // Create attributes array for textfield.
       $attributes = array(
-        'class' => array('usagov-search-autocomplete', 'ui-autocomplete-input', 'ui-corner-all'),
+        'class' => array('usagov-search-autocomplete',
+          'ui-autocomplete-input',
+          'ui-corner-all'),
         'autocomplete' => 'off',
         'type ' => 'text',
         // Adding the id attribute can cause issues that rely on default Drupal
@@ -50,6 +50,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
         case 'search_form':
           $form['basic']['keys']['#attributes'] = $attributes;
           break;
+
         default:
           $form[$form_id]['#attributes'] = $attributes;
           break;
@@ -70,7 +71,7 @@ function usasearch_preprocess_page(&$variables) {
 
   // Check for usasearch_affiliate_name variable, if set output javascript and
   // css references. Detailed info about this USASearch feature here:
-  // http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
+  // @see http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
   $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
   if ($affiliate_name) {
     $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
@@ -84,6 +85,8 @@ function usasearch_preprocess_page(&$variables) {
     $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
     $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
   }
-  // Output contents of $inline_js into one combined inline javascript tag using drupal_add_js function.
+
+  // Output contents of $inline_js into one combined inline javascript tag using
+  // drupal_add_js function.
   drupal_add_js($inline_js, array('type' => 'inline', 'scope' => 'footer'));
 }
