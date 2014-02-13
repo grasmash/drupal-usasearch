@@ -29,11 +29,16 @@ function usasearch_videonews_search_execute($keys = NULL, $conditions = array())
 }
 
 /**
- * Converts a USA Search result to a Drupal search result for news index.
+ * Converts a USA Search result to a Drupal search result for videonews index.
  *
- * @param $result
- * @param $module
+ * @param array $result
+ *   A single search result, parsed directly from USA Search response JSON.
+ *
+ * @param string $module
+ *   The drupal module executing the search.
+ *
  * @return array
+ *   A search result to be passed to Drupal's search-result.tpl.php.
  */
 function usasearch_videonews_result_news($result, $module) {
   return array(
@@ -42,6 +47,6 @@ function usasearch_videonews_result_news($result, $module) {
     'snippet' => usasearch_api_replace_unicode_char($result['content']),
     'module' => $module,
     'date' => usasearch_api_utc_to_unix_timestamp($result['publishedAt']),
-    'type' => 'docs',
+    'type' => 'videonews',
   );
 }

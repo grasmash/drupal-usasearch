@@ -8,12 +8,16 @@
 use Guzzle\Http\Client;
 
 class UsaSearchClient extends Client {
-  protected $affiliate;
-  protected $api_url;
 
+  protected $affiliate;
+  protected $apiUrl;
+
+  /**
+   * Constructor.
+   */
   public function __construct() {
-    $this->api_url = 'http://search.usa.gov/api';
-    parent::__construct($this->api_url);
+    $this->$apiUrl = 'http://search.usa.gov/api';
+    parent::__construct($this->$apiUrl);
 
     // Set all requests to include the 'affiliate' parameter.
     $this->affiliate = variable_get('usasearch_affiliate_name', '');

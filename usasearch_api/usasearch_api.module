@@ -1,6 +1,29 @@
 <?php
 
 /**
+ * @file
+ * USA Search API search module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function usasearch_api_menu() {
+  $items = array();
+
+  $items['search/advanced'] = array(
+    'title' => 'Advanced Search',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('usasearch_api_advanced_form'),
+    'access arguments' => array('Use advanced search'),
+    'file' => 'usasearch_api.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+/**
  * Implements hook_search_info().
  */
 function usasearch_api_search_info() {
@@ -21,17 +44,22 @@ function hook_cron() {
 /**
  * Callback for conditions_callback property in hook_search_info().
  */
-function usasearch_api_conditions() {
+function usasearch_api_conditions($keys) {
   $conditions = array();
 
-  if (!empty($_REQUEST['keys'])) {
-    $conditions['keys'] = $_REQUEST['keys'];
-  }
-  if (!empty($_REQUEST['dc'])) {
-    $conditions['dc'] = $_REQUEST['dc'];
-  }
-  if (!empty($_REQUEST['sort_by'])) {
-    $conditions['sort_by'] = $_REQUEST['sort_by'];
+  $params = array(
+    'dc',
+    'sort_by',
+    'all',
+    'exact',
+    'any',
+    'none',
+  );
+
+  foreach ($params as $param) {
+    if (!empty($_REQUEST[$param])) {
+      $conditions[$param] = check_plain($_REQUEST[$param]);
+    }
   }
 
   return $conditions;
@@ -54,7 +82,12 @@ function usasearch_api_search_execute($keys = NULL, $conditions = NULL) {
 function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'search_form') {
-    module_load_include('inc', 'usasearch_api');
+    $params = drupal_get_query_parameters();
+
+    $advanced_link_options = array('query' => array_merge(array('all' => arg(2)), $params));
+    $form['advanced'] = array(
+      '#markup' => l(t('Advanced Search'), 'search/advanced', $advanced_link_options),
+    );
 
     // Get cached response object. We do not clear the cached object here,
     // because it may be needed by usasearch_api_block_view().
@@ -62,14 +95,14 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
     $response = ctools_object_cache_get('search_response', 'usasearch_api');
 
     if (!empty($response)) {
-      $params = drupal_get_query_parameters();
+      module_load_include('inc', 'usasearch_api');
       $link_options = array('query' => $params);
 
       // Include a 'did you mean' spelling suggestion if it was returned.
       // @todo Add variable to enable or disable this.
       if (!empty($response['spelling_suggestion'])) {
         $suggestion = check_plain($response['spelling_suggestion']);
-        $suggestion_link =  l($suggestion, $form_state['action'] . '/'. $suggestion, $link_options);
+        $suggestion_link = l($suggestion, $form_state['action'] . '/' . $suggestion, $link_options);
         $form['spelling_suggestion'] = array(
           '#markup' => t('Did you mean !suggestion?', array('!suggestion' => $suggestion_link)),
         );
@@ -83,7 +116,7 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
           '#title' => t('Related Searches'),
         );
         foreach ($response['related'] as $key => $related) {
-          $related_link = l(check_plain($related), $form_state['action'] . '/'. check_plain($related), $link_options);
+          $related_link = l(check_plain($related), $form_state['action'] . '/' . check_plain($related), $link_options);
           $form['related'][$key] = array(
             '#prefix' => '<div class="related-search">',
             '#markup' => $related_link,
@@ -94,7 +127,10 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
 
       // Display for web, docs, and image searches. This is required by the
       // USASearch Terms of Service.
-      if (in_array($form['module']['#value'], array('usasearch_api', 'usasearch_docs', 'usasearch_images'))) {
+      if (in_array($form['module']['#value'], array(
+        'usasearch_api',
+        'usasearch_docs',
+        'usasearch_images'))) {
         $form['logo'] = usasearch_api_logo();
         $form['logo']['#weight'] = 100;
       }
@@ -124,9 +160,11 @@ function usasearch_api_search_form_submit($form, &$form_state) {
 
   // Create destination.
   $destination = array($form_state['action'] . '/' . $keys);
-  if (!empty($form_state['redirect_query'])) {
+  if (!empty($form_state['conditions'])) {
     $destination[1]['query'] = array();
-    foreach ($form_state['redirect_query'] as $key => $value) {
+    foreach ($form_state['conditions'] as $key => $value) {
+      // Values will be sanitized before usage in implementation of
+      // callback_search_conditions().
       $destination[1]['query'][$key] = $value;
     }
   }
@@ -142,7 +180,7 @@ function usasearch_api_search_form_submit($form, &$form_state) {
  * that it may contain HTML like <b></b>. Otherwise, this is unchanged from
  * original.
  *
- * @see template_preprocess_search_result().
+ * @see template_preprocess_search_result()
  */
 function usasearch_api_preprocess_search_result(&$variables) {
   global $language;
@@ -203,7 +241,7 @@ function usasearch_api_block_view($delta = '') {
       $block['subject'] = t('Boosted Results');
 
       // @todo theme boosted results.
-      //$block['content'] = usasearch_format_boosted_results();
+      // $block['content'] = usasearch_format_boosted_results();
       $block['content'] = '';
       break;
   }

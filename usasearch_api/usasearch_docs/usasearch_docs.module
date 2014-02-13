@@ -29,11 +29,16 @@ function usasearch_docs_search_execute($keys = NULL, $conditions = array()) {
 }
 
 /**
- * Converts a USA Search result to a Drupal search result for docs index.
+ * Converts a USA Search result to a Drupal search result for doc index.
  *
- * @param $result
- * @param $module
+ * @param array $result
+ *   A single search result, parsed directly from USA Search response JSON.
+ *
+ * @param string $module
+ *   The drupal module executing the search.
+ *
  * @return array
+ *   A search result to be passed to Drupal's search-result.tpl.php.
  */
 function usasearch_docs_result_docs($result, $module) {
   return array(
@@ -57,7 +62,7 @@ function usasearch_docs_form_alter(&$form, &$form_state, $form_id) {
       '#title' => t('Collection'),
       // @todo Replace this with values derived from an admin variable.
       '#options' => array('' => 'none', 'test' => 'test'),
-      '#default_value' => isset($_GET['dc']) ? $_GET['dc'] : 'none',
+      '#default_value' => isset($_GET['dc']) ? check_plain($_GET['dc']) : 'none',
     );
 
     $form['#validate'][] = 'usasearch_docs_search_form_validate';
@@ -65,12 +70,12 @@ function usasearch_docs_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Implements hook_form_alter().
+ * Validation handler for search_form.
  */
 function usasearch_docs_search_form_validate(&$form, &$form_state) {
   if (!empty($form_state['values']['dc'])) {
-    // Add value to $form_state['redirect_query'], which will be used to
+    // Add value to $form_state['conditions'], which will be used to
     // set the form destination in usasearch_api_search_form_submit().
-    $form_state['redirect_query']['dc'] = $form_state['values']['dc'];
+    $form_state['conditions']['dc'] = $form_state['values']['dc'];
   }
 }

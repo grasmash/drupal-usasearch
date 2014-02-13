@@ -31,9 +31,14 @@ function usasearch_images_search_execute($keys = NULL, $conditions = array()) {
 /**
  * Converts a USA Search result to a Drupal search result for images index.
  *
- * @param $result
- * @param $module
+ * @param array $result
+ *   A single search result, parsed directly from USA Search response JSON.
+ *
+ * @param string $module
+ *   The drupal module executing the search.
+ *
  * @return array
+ *   A search result to be passed to Drupal's search-result.tpl.php.
  */
 function usasearch_images_result_images($result, $module) {
   $protocol = isset($_SERVER['HTTPS']) ? 'https://' : 'http://';

@@ -5,14 +5,97 @@
  * Contains non-hook implementations for USA Search API module.
  */
 
+/**
+ * Implements hook_form().
+ */
+function usasearch_api_advanced_form() {
+  $form = array();
+
+  $form['all'] = array(
+    '#type' => 'textfield',
+    '#title' => t('All of these words'),
+    '#default_value' => !empty($_GET['all']) ? check_plain($_GET['all']) : '',
+  );
+  $form['exact'] = array(
+    '#type' => 'textfield',
+    '#title' => t('This exact phrase'),
+    '#default_value' => !empty($_GET['exact']) ? check_plain($_GET['exact']) : '',
+  );
+  $form['any'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Any of these words'),
+    '#default_value' => !empty($_GET['any']) ? check_plain($_GET['any']) : '',
+  );
+  $form['none'] = array(
+    '#type' => 'textfield',
+    '#title' => t('None of these words'),
+    '#default_value' => !empty($_GET['none']) ? check_plain($_GET['none']) : '',
+  );
+  $form['file_type'] = array(
+    '#type' => 'textfield',
+    '#title' => t('File Type'),
+    '#default_value' => !empty($_GET['file_type']) ? check_plain($_GET['file_type']) : '',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+
+  return $form;
+}
 
 /**
+ * Submit handler for advanced search form.
+ */
+function usasearch_api_advanced_form_submit($form, &$form_state) {
+  $keys = array();
+
+  if (!empty($form_state['values']['all'])) {
+    $all_keys = check_plain($form_state['values']['all']);
+    $keys[] = $all_keys;
+  }
+  if (!empty($form_state['values']['exact'])) {
+    $exact_keys = '"' . check_plain($form_state['values']['exact']) . '"';
+    $keys[] = $exact_keys;
+  }
+  if (!empty($form_state['values']['any'])) {
+    $any_keys = check_plain($form_state['values']['any']);
+    $any_keys = explode(' ', $any_keys);
+    $any_keys = '(' . implode(' OR ', $any_keys) . ')';
+    $keys[] = $any_keys;
+  }
+  if (!empty($form_state['values']['none'])) {
+    $not_keys = check_plain($form_state['values']['none']);
+    $not_keys = explode(' ', $not_keys);
+    $not_keys = '-' . implode(' -', $not_keys);
+
+    $keys[] = $not_keys;
+  }
+  if (!empty($form_state['values']['file_type'])) {
+    $file_type = check_plain($form_state['values']['file_type']);
+    $file_type = 'filetype:' . $file_type;
+    $keys[] = $file_type;
+  }
+
+  $advanced_keys = implode(' ', $keys);
+
+  // Create destination.
+  $destination = array('search/all/' . $advanced_keys);
+  $form_state['redirect'] = $destination;
+}
+
+/**
+ * Fetch search results from USA Search API.
+ *
  * @param string $keys
  *   The keyword string, passed by hook_search_execute().
+ *
  * @param array $conditions
  *   An associative array of conditions, passed by hook_search_execute().
- * @param stirng $module
+ *
+ * @param string $module
  *   The name of the module performing the search.
+ *
  * @return array
  *   An array of formatted search results.
  */
@@ -28,17 +111,23 @@ function usasearch_api_get_results($keys, $conditions, $module) {
   $page = pager_find_page() + 1;
 
   // Query the API.
-  $client = new UsaSearchClient();
-  $response = $client->search($keys, $dc, $page, $index);
-
-  // We temporarily cache the response so that it can be used to in a subsequent
-  // hook_form_alter() implementation.
-  ctools_include('object-cache');
-  ctools_object_cache_set('search_response', 'usasearch_api', $response);
+  try {
+    $client = new UsaSearchClient();
+    $response = $client->search($keys, $dc, $page, $index);
+  }
+  catch (Exception $e) {
+    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
+    drupal_set_message(t('An error occurred when attempting to process your search request. Please try again.'), 'error');
+  }
 
   $results = array();
   if (!empty($response['total'])) {
     module_load_include('inc', 'usasearch_api');
+
+    // We temporarily cache the response so that it can be used to in a
+    // subsequent hook_form_alter() implementation.
+    ctools_include('object-cache');
+    ctools_object_cache_set('search_response', 'usasearch_api', $response);
 
     // Now that we have the total number of results, initialize the pager.
     pager_default_initialize($response['total'], $num_per_page);
@@ -57,9 +146,14 @@ function usasearch_api_get_results($keys, $conditions, $module) {
 /**
  * Converts a USA Search result to a Drupal search result for web index.
  *
- * @param $result
- * @param $module
+ * @param array $result
+ *   A single search result, parsed directly from USA Search response JSON.
+ *
+ * @param string $module
+ *   The drupal module executing the search.
+ *
  * @return array
+ *   A search result to be passed to Drupal's search-result.tpl.php.
  */
 function usasearch_api_result_web($result, $module) {
   return array(
@@ -133,12 +227,11 @@ function usasearch_api_fetch_logo() {
 /**
  * Converts the unicode characters "U+E000" and "U+E001" to <b> and </b> tags.
  *
- * @param $string
+ * @param string $string
  *   The string containing unicode to be replaced.
  *
  * @return string
  *   The modified string.
- *
  */
 function usasearch_api_replace_unicode_char($string) {
   $string = preg_replace('/\x{e000}/u', '<strong>', $string);
@@ -152,6 +245,7 @@ function usasearch_api_replace_unicode_char($string) {
  *
  * @param string $utc_time
  *   A UTC time string.
+ *
  * @return int
  *   A unix timestamp.
  */
