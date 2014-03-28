@@ -17,6 +17,15 @@ function usasearch_docs_search_info() {
 }
 
 /**
+ * Implements hook_usasearch_api_conditions().
+ */
+function usasearch_docs_usasearch_api_conditions_alter(&$conditions) {
+  if (!empty($_REQUEST['dc'])) {
+    $conditions['dc'] = check_plain($_REQUEST['dc']);
+  }
+}
+
+/**
  * Implements hook_search_execute().
  */
 function usasearch_docs_search_execute($keys = NULL, $conditions = array()) {

@@ -15,12 +15,12 @@ class UsaSearchClient extends Client {
   /**
    * Constructor.
    */
-  public function __construct() {
+  public function __construct($affiliate) {
     $this->apiUrl = 'http://search.usa.gov/api';
     parent::__construct($this->apiUrl);
 
     // Set all requests to include the 'affiliate' parameter.
-    $this->affiliate = variable_get('usasearch_affiliate_name', '');
+    $this->affiliate = $affiliate;
     $this->setDefaultOption('query', array('affiliate' => $this->affiliate));
   }
 

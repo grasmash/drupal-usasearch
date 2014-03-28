@@ -102,6 +102,7 @@ function usasearch_api_advanced_form_submit($form, &$form_state) {
 function usasearch_api_get_results($keys, $conditions, $module) {
 
   // Set up vars.
+  $affiliate = isset($conditions['affiliate']) ? $conditions['affiliate'] : '';
   $doc_collection = isset($conditions['dc']) ? $conditions['dc'] : '';
   $index = isset($conditions['index']) ? $conditions['index'] : 'web';
   $num_per_page = variable_get('usasearch_results_per_page', 10);
@@ -110,8 +111,7 @@ function usasearch_api_get_results($keys, $conditions, $module) {
   // We need to add one to the value before making the API request.
   $page = pager_find_page() + 1;
 
-  // Query the USA Search API.
-  $response = usasearch_api_request($keys, $doc_collection, $page, $index);
+  $response = usasearch_api_request($keys, $doc_collection, $page, $index, $affiliate);
 
   // Build results and pager.
   $results = array();
@@ -133,17 +133,40 @@ function usasearch_api_get_results($keys, $conditions, $module) {
 
 /**
  * Makes a search request to the USA Search API.
+ *
+ * @param string $keys
+ *   The keywords to search.
+ *
+ * @param int $doc_collection
+ *   The document collection ID.
+ *
+ * @param int $page
+ *   The search results page number to return. E.g., results page 1, 2, etc.
+ *
+ * @param string $index
+ *   The index to search. E.g., news, web, images, etc.
+ *
+ * @param string $affiliate
+ *   (optional) The USASearch affiliate id to search. Defaults to value in
+ *   usasearch_affiliate_name variable.
+ *
+ * @return array
+ *   The parsed JSON response from USASearch.
  */
-function usasearch_api_request($keys, $doc_collection, $page, $index) {
+function usasearch_api_request($keys, $doc_collection, $page, $index, $affiliate = NULL) {
 
   $response = &drupal_static(__FUNCTION__);
   if (isset($response)) {
     return $response;
   }
 
+  if (!$affiliate) {
+    $affiliate = variable_get('usasearch_affiliate_name', '');
+  }
+
   // Query the API.
   try {
-    $client = new UsaSearchClient();
+    $client = new UsaSearchClient($affiliate);
     $response = $client->search($keys, $doc_collection, $page, $index);
   }
   catch (Exception $e) {

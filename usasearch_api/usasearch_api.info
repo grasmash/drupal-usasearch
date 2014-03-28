@@ -7,4 +7,5 @@ package = USASearch
 files[] = UsaSearchClient.inc
 dependencies[] = usasearch
 dependencies[] = composer_manager
+dependencies[] = ctools
 
