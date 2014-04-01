@@ -1,0 +1,25 @@
+<?php
+/**
+ * @file
+ * Install file for USASearch field.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function usasearch_field_field_schema($field) {
+  $columns = array(
+    'usasearch_field_affiliate' => array(
+      'type' => 'varchar',
+      'length' => 10,
+      'not null' => FALSE,
+    ),
+  );
+  $indexes = array(
+    'usasearch_field_affiliate' => array('usasearch_field_affiliate'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}
