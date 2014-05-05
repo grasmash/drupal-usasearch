@@ -298,3 +298,72 @@ function usasearch_api_utc_to_unix_timestamp($utc_time) {
   $unix_timestamp = strtotime($utc_time . ' UTC');
   return $unix_timestamp;
 }
+
+/**
+ * Verifies that a given subsite is in list of configured subsites.
+ *
+ * @param string $affiliate_id
+ *
+ * @return bool
+ *   TRUE if the given subsite is in the list of configured subsites.
+ */
+function usasearch_api_is_affiliate($affiliate_id) {
+  $subsites = usasearch_api_affiliates_list();
+
+  return array_key_exists($affiliate_id, $subsites);
+}
+
+
+/**
+ * Returns an array of subsites.
+ *
+ * @return array
+ *   The available subsites.
+ */
+function usasearch_api_affiliates_list() {
+  $subsites_string = variable_get('usasearch_allowed_affiliates', '');
+
+  module_load_include('module', 'list');
+  $subsites = list_extract_allowed_values($subsites_string, 'list text', FALSE);
+
+  return $subsites;
+}
+
+/**
+ * Generates a list of subsite links.
+ *
+ * @return array
+ *   A renderable array of subsite links.
+ */
+function usasearch_api_affiliate_links() {
+  $subsites = usasearch_api_affiliates_list();
+
+  $params = drupal_get_query_parameters();
+  $subsite_links = array();
+  foreach ($subsites as $affiliate_id => $subsite_name) {
+    $query = array_merge($params, array('affiliate' => check_plain($affiliate_id)));
+    $options = array(
+      'query' => $query,
+      'attributes' => array(
+        'class' => array(),
+      ),
+    );
+    if (!empty($params['affiliate']) && $params['affiliate'] == $affiliate_id) {
+      $options['attributes']['class'][] = 'current';
+    }
+    $subsite_links[$affiliate_id] = l(t('@subsite_name', array('@subsite_name' => $subsite_name)), current_path(), $options);
+  }
+
+  $markup = array(
+    '#items' => $subsite_links,
+    '#theme' => 'item_list',
+    '#attributes' => array(
+      'class' => 'usasearch-affiliates',
+    ),
+    '#attached' => array(
+      'css' => array(drupal_get_path('module', 'usasearch_api') . '/usasearch_api.css'),
+    ),
+  );
+
+  return $markup;
+}
