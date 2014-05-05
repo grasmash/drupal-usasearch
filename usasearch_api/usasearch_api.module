@@ -15,7 +15,7 @@ function usasearch_api_menu() {
     'title' => 'Advanced Search',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_api_advanced_form'),
-    'access arguments' => array('Use advanced search'),
+    'access arguments' => array('use advanced search'),
     'file' => 'usasearch_api.inc',
     'type' => MENU_LOCAL_TASK,
   );

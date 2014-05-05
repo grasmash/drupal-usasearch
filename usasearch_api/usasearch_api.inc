@@ -40,6 +40,11 @@ function usasearch_api_advanced_form() {
     '#type' => 'submit',
     '#value' => t('Search'),
   );
+  $form['help'] = array(
+    '#prefix' => '<div class="advanced-search-help">',
+    '#markup' => t('You can also use !link to help limit and focus your searches.', array('!link' => l(t('advanced search operators'), 'http://onlinehelp.microsoft.com/en-us/bing/ff808421.aspx'))),
+    '#suffix' => '</div>',
+  );
 
   return $form;
 }
