@@ -73,6 +73,11 @@ function usasearch_api_conditions($keys) {
  * Implements hook_search_execute().
  */
 function usasearch_api_search_execute($keys = NULL, $conditions = NULL) {
+  // $conditions has been sanitized by usasearch_api_conditions().
+  // $keys has not been sanitized up to this point, so that html entities
+  // are not inserted as the default value for the keys field.
+  $keys = check_plain($keys);
+
   module_load_include('inc', 'usasearch_api');
   $module = 'usasearch_api';
   $results = usasearch_api_get_results($keys, $conditions, $module);

@@ -14,28 +14,38 @@ function usasearch_api_advanced_form() {
   $form['all'] = array(
     '#type' => 'textfield',
     '#title' => t('All of these words'),
-    '#default_value' => !empty($_GET['all']) ? check_plain($_GET['all']) : '',
+    '#default_value' => !empty($_GET['all']) ? $_GET['all'] : '',
   );
   $form['exact'] = array(
     '#type' => 'textfield',
     '#title' => t('This exact phrase'),
-    '#default_value' => !empty($_GET['exact']) ? check_plain($_GET['exact']) : '',
+    '#default_value' => !empty($_GET['exact']) ? $_GET['exact'] : '',
   );
   $form['any'] = array(
     '#type' => 'textfield',
     '#title' => t('Any of these words'),
-    '#default_value' => !empty($_GET['any']) ? check_plain($_GET['any']) : '',
+    '#default_value' => !empty($_GET['any']) ? $_GET['any'] : '',
   );
   $form['none'] = array(
     '#type' => 'textfield',
     '#title' => t('None of these words'),
-    '#default_value' => !empty($_GET['none']) ? check_plain($_GET['none']) : '',
+    '#default_value' => !empty($_GET['none']) ? $_GET['none'] : '',
   );
   $form['file_type'] = array(
     '#type' => 'textfield',
     '#title' => t('File Type'),
-    '#default_value' => !empty($_GET['file_type']) ? check_plain($_GET['file_type']) : '',
+    '#default_value' => !empty($_GET['file_type']) ? $_GET['file_type'] : '',
   );
+  $affiliates = usasearch_api_affiliates_list();
+  if ($affiliates) {
+    $form['affiliate'] = array(
+      '#type' => 'select',
+      '#title' => t('Affiliate'),
+      '#options' => $affiliates,
+      '#default_value' => !empty($_GET['affiliate']) ? $_GET['affiliate'] : variable_get('usasearch_affiliate_name'),
+      '#required' => FALSE,
+    );
+  }
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
@@ -53,39 +63,51 @@ function usasearch_api_advanced_form() {
  * Submit handler for advanced search form.
  */
 function usasearch_api_advanced_form_submit($form, &$form_state) {
+  // Create form destination parameters.
+  $params = drupal_get_query_parameters();
+  $options = array(
+    'query' => array(),
+  );
+
   $keys = array();
 
   if (!empty($form_state['values']['all'])) {
-    $all_keys = check_plain($form_state['values']['all']);
+    $all_keys = $form_state['values']['all'];
     $keys[] = $all_keys;
   }
   if (!empty($form_state['values']['exact'])) {
-    $exact_keys = '"' . check_plain($form_state['values']['exact']) . '"';
+    $exact_keys = '"' . $form_state['values']['exact'] . '"';
     $keys[] = $exact_keys;
   }
   if (!empty($form_state['values']['any'])) {
-    $any_keys = check_plain($form_state['values']['any']);
+    $any_keys = $form_state['values']['any'];
     $any_keys = explode(' ', $any_keys);
     $any_keys = '(' . implode(' OR ', $any_keys) . ')';
     $keys[] = $any_keys;
   }
   if (!empty($form_state['values']['none'])) {
-    $not_keys = check_plain($form_state['values']['none']);
+    $not_keys = $form_state['values']['none'];
     $not_keys = explode(' ', $not_keys);
     $not_keys = '-' . implode(' -', $not_keys);
 
     $keys[] = $not_keys;
   }
   if (!empty($form_state['values']['file_type'])) {
-    $file_type = check_plain($form_state['values']['file_type']);
+    $file_type = $form_state['values']['file_type'];
     $file_type = 'filetype:' . $file_type;
     $keys[] = $file_type;
+  }
+  if (!empty($form_state['values']['affiliate'])) {
+    $affiliate = $form_state['values']['affiliate'];
+    $options['query']['affiliate'] = $affiliate;
+  }
+  elseif (!empty($params['affiliate'])) {
+    $options['query']['affiliate'] = $params['affiliate'];
   }
 
   $advanced_keys = implode(' ', $keys);
 
-  // Create destination.
-  $destination = array('search/all/' . $advanced_keys);
+  $destination = array('search/all/' . $advanced_keys, $options);
   $form_state['redirect'] = $destination;
 }
 
@@ -325,6 +347,11 @@ function usasearch_api_affiliates_list() {
 
   module_load_include('module', 'list');
   $subsites = list_extract_allowed_values($subsites_string, 'list text', FALSE);
+
+  $default_affiliate = variable_get('usasearch_affiliate_name');
+  if ($default_affiliate && empty($subsites[$default_affiliate])) {
+    $subsites = array($default_affiliate => t('Default')) + $subsites;
+  }
 
   return $subsites;
 }
