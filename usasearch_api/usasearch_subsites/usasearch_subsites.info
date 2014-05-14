@@ -1,7 +1,0 @@
-name = USASearch Subsites
-description = Allows multiple affiliate ids to be searched.
-core = 7.x
-configure = admin/config/search/usasearch
-package = USASearch
-
-dependencies[] = usasearch_api
