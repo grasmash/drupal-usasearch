@@ -20,6 +20,12 @@ function usasearch_admin() {
     '#description' => t('Please enter your affiliate name provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "example.gov".', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
     '#required' => TRUE,
   );
+  $form['usasearch_autocomplete'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable autocomplete'),
+    '#default_value' => variable_get('usasearch_autocomplete', TRUE),
+    '#description' => t('Check this box to load USASearch javascript for autocompletion.'),
+  );
   $form['usasearch_action_domain'] = array(
     '#type' => 'textfield',
     '#title' => t('Search domain'),

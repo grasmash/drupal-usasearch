@@ -80,10 +80,12 @@ function usasearch_preprocess_page(&$variables) {
     if ($action_domain != 'search.usa.gov') {
       $inline_js .= "usasearch_config['host'] = '//$action_domain'\n";
     }
-    $inline_js .= "var script = document.createElement('script');\n";
-    $inline_js .= "script.type = 'text/javascript';\n";
-    $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
-    $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
+    if (variable_get('usasearch_autocomplete', TRUE)) {
+      $inline_js .= "var script = document.createElement('script');\n";
+      $inline_js .= "script.type = 'text/javascript';\n";
+      $inline_js .= "script.src = '//$action_domain/javascripts/remote.loader.js';\n";
+      $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
+    }
   }
 
   // Output contents of $inline_js into one combined inline javascript tag using
