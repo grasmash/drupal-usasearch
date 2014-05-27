@@ -322,12 +322,13 @@ function usasearch_api_utc_to_unix_timestamp($utc_time) {
 }
 
 /**
- * Verifies that a given subsite is in list of configured subsites.
+ * Verifies that a given affiliate id is permitted for use.
  *
  * @param string $affiliate_id
+ *   The USA Search affiliate id to validate.
  *
  * @return bool
- *   TRUE if the given subsite is in the list of configured subsites.
+ *   TRUE if the given affiliate id is permitted for use.
  */
 function usasearch_api_is_affiliate($affiliate_id) {
   $subsites = usasearch_api_affiliates_list();
