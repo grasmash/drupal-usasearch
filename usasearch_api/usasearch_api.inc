@@ -128,6 +128,11 @@ function usasearch_api_advanced_form_submit($form, &$form_state) {
  */
 function usasearch_api_get_results($keys, $conditions, $module) {
 
+  // Integrate with shunt module.
+  if (module_exists('shunt') && shunt_is_enabled('search')) {
+    return array();
+  }
+
   // Set up vars.
   $affiliate = isset($conditions['affiliate']) ? $conditions['affiliate'] : '';
   $doc_collection = isset($conditions['dc']) ? $conditions['dc'] : '';
