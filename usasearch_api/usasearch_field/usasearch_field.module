@@ -52,10 +52,11 @@ function usasearch_field_field_widget_form(&$form, &$form_state, $field, $instan
 
   switch ($instance['widget']['type']) {
     case 'usasearch_field_affiliate_widget':
+      module_load_include('inc', 'usasearch_api');
       $widget += array(
         '#type' => 'select',
         '#title' => t('Available USASearch Affiliate IDs'),
-        '#options' => usasearch_field_affiliates_list(),
+        '#options' => usasearch_api_affiliates_list(),
         '#default_value' => $value,
         '#required' => 1,
       );
@@ -89,6 +90,7 @@ function usasearch_field_field_formatter_view($entity_type, $entity, $field, $in
         $form = drupal_get_form('search_form');
         $form['affiliate']['#value'] = $item['usasearch_field_affiliate'];
         unset($form['advanced']);
+        unset($form['basic']['keys']['#title']);
         array_push($element[$delta], $form);
       }
       break;

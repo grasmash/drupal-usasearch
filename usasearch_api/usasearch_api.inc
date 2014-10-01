@@ -128,11 +128,6 @@ function usasearch_api_advanced_form_submit($form, &$form_state) {
  */
 function usasearch_api_get_results($keys, $conditions, $module) {
 
-  // Integrate with shunt module.
-  if (module_exists('shunt') && shunt_is_enabled('search')) {
-    return array();
-  }
-
   // Set up vars.
   $affiliate = isset($conditions['affiliate']) ? $conditions['affiliate'] : '';
   $doc_collection = isset($conditions['dc']) ? $conditions['dc'] : '';
@@ -327,13 +322,12 @@ function usasearch_api_utc_to_unix_timestamp($utc_time) {
 }
 
 /**
- * Verifies that a given affiliate id is permitted for use.
+ * Verifies that a given subsite is in list of configured subsites.
  *
  * @param string $affiliate_id
- *   The USA Search affiliate id to validate.
  *
  * @return bool
- *   TRUE if the given affiliate id is permitted for use.
+ *   TRUE if the given subsite is in the list of configured subsites.
  */
 function usasearch_api_is_affiliate($affiliate_id) {
   $subsites = usasearch_api_affiliates_list();
