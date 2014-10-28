@@ -152,6 +152,17 @@ function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
       }
     }
 
+    if (!empty($params['affiliate']) && module_exists('usasearch_field')) {
+      $affiliates = usasearch_api_affiliates_list();
+      $affiliate_id = check_plain($params['affiliate']);
+      $affiliate = !empty($affiliates[$affiliate_id]) ? $affiliates[$affiliate_id] : $affiliate_id;
+      $form['affiliate_title'] = array(
+        '#prefix' => '<div class="usasearch-affiliate-title">',
+        '#markup' => t('Searching within @affiliate', array('@affiliate' => $affiliate)),
+        '#suffix' => '</div>',
+      );
+    }
+
     // Replace the default submit function with our own.
     $form['#submit'][] = 'usasearch_api_search_form_submit';
     if (($key = array_search('search_form_submit', $form['#submit'])) !== FALSE) {

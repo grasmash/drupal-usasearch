@@ -87,13 +87,25 @@ function usasearch_field_field_formatter_view($entity_type, $entity, $field, $in
           '#type' => 'form',
         );
         module_load_include('inc', 'search', 'search.pages');
-        $form = drupal_get_form('search_form');
-        $form['affiliate']['#value'] = $item['usasearch_field_affiliate'];
-        unset($form['advanced']);
-        unset($form['basic']['keys']['#title']);
+        // We pass the string 'usasearch_field' as a build argument so that
+        // subsequent form_alter() implementation can recognize that this form
+        // was built by the usasearch_field module.
+        $form = drupal_get_form('search_form', NULL, NULL, NULL, NULL, 'usasearch_field', $item['usasearch_field_affiliate']);
         array_push($element[$delta], $form);
       }
       break;
   }
   return $element;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function usasearch_field_form_search_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['build_info']['args'][4]) && $form_state['build_info']['args'][4] == 'usasearch_field') {
+    $form['affiliate']['#value'] = $form_state['build_info']['args'][5];
+    $form['basic']['keys']['#attributes']['placeholder'] = t('Search');
+    unset($form['basic']['keys']['#title']);
+    unset($form['advanced']);
+  }
 }
