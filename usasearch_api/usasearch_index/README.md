@@ -13,7 +13,7 @@ Installation
     * Navigating to /admin/structure/services
     * Selecting 'edit resources' for an endpoint
     * Checking 'usasearch' checkbox
-
+* Visit resource at /[your-sites-endpoint]/usasearch.json
 
 Modifying Response
 ---------------------
