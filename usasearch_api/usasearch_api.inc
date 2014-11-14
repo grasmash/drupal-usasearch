@@ -199,6 +199,11 @@ function usasearch_api_request($keys, $doc_collection, $page, $index, $affiliate
   catch (Exception $e) {
     watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
     drupal_set_message(t('An error occurred when attempting to process your search request. Please try again.'), 'error');
+    // By default, error responses are not cached. This prevents us from caching
+    // requests that time out and return no results.
+    if (!variable_get('usasearch_api_cache_errors')) {
+      drupal_add_http_header('Cache-control', 'no-store');
+    }
   }
 
   return $response;
