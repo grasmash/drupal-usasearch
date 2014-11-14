@@ -19,6 +19,12 @@
 function _usasearch_index_resource($page, $page_size) {
   module_load_include('inc', 'services', 'services.module');
 
+  $resource = 'node';
+  $default_limit = variable_get("services_{$resource}_index_page_size", 100);
+  if (!user_access('perform unlimited index queries') && $page_size > $default_limit) {
+    $page_size = $default_limit;
+  }
+
   $fields = array(
     'title',
     'nid',
@@ -40,14 +46,14 @@ function _usasearch_index_resource($page, $page_size) {
   $count_query = $node_select;
   $count = $count_query->countQuery()->execute()->fetchField();
 
-  services_resource_build_index_query($node_select, $page, $fields, $parameters, $page_size, 'node');
+  services_resource_build_index_query($node_select, $page, $fields, $parameters, $page_size, $resource);
 
   if (!user_access('administer nodes')) {
     $node_select->condition('status', 1);
   }
 
   $result = services_resource_execute_index_query($node_select);
-  $nodes = services_resource_build_index_list($result, 'node', 'nid');
+  $nodes = services_resource_build_index_list($result, $resource, 'nid');
 
   // Render the node content.
   foreach ($nodes as $nid => $node) {
