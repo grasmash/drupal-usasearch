@@ -37,7 +37,7 @@ function usasearch_api_search_info() {
 /**
  * Implements hook_cron().
  */
-function hook_cron() {
+function usasearch_api_cron() {
   usasearch_api_fetch_logo();
 }
 
