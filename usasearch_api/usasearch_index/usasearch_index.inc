@@ -25,13 +25,16 @@ function _usasearch_index_resource($page, $page_size) {
     $page_size = $default_limit;
   }
 
+  $count_query = db_select('node', 't')
+    ->condition('status', 1)
+    ->addTag('usasearch_index_count');
+  $count = $count_query->countQuery()->execute()->fetchField();
+
   $fields = array(
     'title',
     'nid',
     'vid',
     'type',
-    'created',
-    'changed',
     'language',
     'promote',
   );
@@ -39,12 +42,15 @@ function _usasearch_index_resource($page, $page_size) {
   $parameters = '';
 
   $node_select = db_select('node', 't')
-    ->addTag('usasearch_index')
-    ->orderBy('sticky', 'DESC')
-    ->orderBy('created', 'DESC');
+    ->condition('status', 1)
+    ->orderBy('changed', 'DESC')
+    ->orderBy('created', 'DESC')
+    ->addTag('usasearch_index');
 
-  $count_query = $node_select;
-  $count = $count_query->countQuery()->execute()->fetchField();
+  // Add created and changed fields. These are added as expressions so that
+  // the timestamp can be formatted as yyyy-mm-dd HH:mm:ss.
+  $node_select->addExpression('FROM_UNIXTIME(t.created)', 'created');
+  $node_select->addExpression('FROM_UNIXTIME(t.changed)', 'changed');
 
   services_resource_build_index_query($node_select, $page, $fields, $parameters, $page_size, $resource);
 
