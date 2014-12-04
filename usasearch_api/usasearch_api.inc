@@ -36,7 +36,7 @@ function usasearch_api_advanced_form() {
     '#title' => t('File Type'),
     '#default_value' => !empty($_GET['file_type']) ? $_GET['file_type'] : '',
   );
-  $affiliates = usasearch_api_affiliates_list();
+  $affiliates = usasearch_affiliates_list();
   if ($affiliates) {
     $form['affiliate'] = array(
       '#type' => 'select',
@@ -327,48 +327,13 @@ function usasearch_api_utc_to_unix_timestamp($utc_time) {
 }
 
 /**
- * Verifies that a given subsite is in list of configured subsites.
- *
- * @param string $affiliate_id
- *
- * @return bool
- *   TRUE if the given subsite is in the list of configured subsites.
- */
-function usasearch_api_is_affiliate($affiliate_id) {
-  $subsites = usasearch_api_affiliates_list();
-
-  return array_key_exists($affiliate_id, $subsites);
-}
-
-
-/**
- * Returns an array of subsites.
- *
- * @return array
- *   The available subsites.
- */
-function usasearch_api_affiliates_list() {
-  $subsites_string = variable_get('usasearch_allowed_affiliates', '');
-
-  module_load_include('module', 'list');
-  $subsites = list_extract_allowed_values($subsites_string, 'list text', FALSE);
-
-  $default_affiliate = variable_get('usasearch_affiliate_name');
-  if ($default_affiliate && empty($subsites[$default_affiliate])) {
-    $subsites = array($default_affiliate => t('Default')) + $subsites;
-  }
-
-  return $subsites;
-}
-
-/**
  * Generates a list of subsite links.
  *
  * @return array
  *   A renderable array of subsite links.
  */
 function usasearch_api_affiliate_links() {
-  $subsites = usasearch_api_affiliates_list();
+  $subsites = usasearch_affiliates_list();
 
   $params = drupal_get_query_parameters();
   $subsite_links = array();

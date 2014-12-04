@@ -36,5 +36,12 @@ function usasearch_admin() {
     '#required' => FALSE,
   );
 
+  $form['usasearch_allowed_affiliates'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Allowed Affliate IDs'),
+    '#description' => t('A pipe-delimited list of affiliate ids that may be used in the USASearch field, in the form of "affiliate_id|Title"'),
+    '#default_value' => variable_get('usasearch_allowed_affiliates', ''),
+  );
+
   return system_settings_form($form);
 }

@@ -42,13 +42,12 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
     $form['#method'] = 'get';
     $form['#action'] = '//' . $action_domain . '/search';
 
+    $form['affiliate']['#type'] = 'hidden';
     // Check for affiliate_name variable before printing the affiliate form
-    // element.
-    if ($affiliate_name) {
-      $form['affiliate'] = array(
-        '#type' => 'hidden',
-        '#value' => $affiliate_name,
-      );
+    // element. We also first check that usasearch_field has not already set
+    // the affiliate.
+    if ($affiliate_name && empty($form['affiliate']['#value'])) {
+      $form['affiliate']['#value'] = $affiliate_name;
     }
 
     // Remove unnecessary, hidden input fields.
