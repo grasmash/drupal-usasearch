@@ -38,6 +38,7 @@ function usasearch_api_search_info() {
  * Implements hook_cron().
  */
 function usasearch_api_cron() {
+  module_load_include('inc', 'usasearch_api');
   usasearch_api_fetch_logo();
 }
 
