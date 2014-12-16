@@ -35,12 +35,12 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
 
   // Search block and search box have similar form structure.
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
-    $action_domain = check_plain(variable_get('usasearch_action_domain', 'search.usa.gov'));
+    $action_domain = check_plain(variable_get('usasearch_action_domain', 'http://search.usa.gov'));
     $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
 
     // Set action method, location and read affiliate from variable.
     $form['#method'] = 'get';
-    $form['#action'] = '//' . $action_domain . '/search';
+    $form['#action'] = $action_domain . '/search';
 
     $form['affiliate']['#type'] = 'hidden';
     // Check for affiliate_name variable before printing the affiliate form
