@@ -111,3 +111,19 @@ function usasearch_field_form_alter(&$form, &$form_state, $form_id) {
     }
   }
 }
+
+/**
+ * Submit callback for usasearch_field_form_alter() forms.
+ */
+function usasearch_field_form_submit($form, &$form_state) {
+  // If we are searching via API, provide the affiliate parameter.
+  if (module_exists('usasearch_api') && !empty($form['affiliate']['#value'])) {
+    $form_state['redirect'] = array(
+      $form_state['redirect'],
+      array('query' => array(
+        'affiliate' => $form['affiliate']['#value'],
+        ),
+      ),
+    );
+  }
+}
