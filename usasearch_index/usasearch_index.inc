@@ -64,6 +64,13 @@ function _usasearch_index_resource($page, $page_size) {
   // Render the node content.
   foreach ($nodes as $nid => $node) {
     $node = node_load($node->nid);
+
+    // Set node path.
+    $uri = entity_uri('node', $node);
+    $nodes[$nid]->path = url($uri['path'], array('absolute' => TRUE));
+    unset($nodes[$nid]->uri);
+
+    // Set node content property.
     $view = node_view($node);
     $rendered = drupal_render($view);
     $nodes[$nid]->content = $rendered;
