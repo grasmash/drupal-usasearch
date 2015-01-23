@@ -108,6 +108,8 @@ function usasearch_field_form_alter(&$form, &$form_state, $form_id) {
       $form['affiliate']['#value'] = $form_state['build_info']['args'][5];
       $form['search_block_form']['#attributes']['placeholder'] = t('Search');
       unset($form['search_block_form']['#title']);
+
+      $form['#submit'][] = 'usasearch_field_form_submit';
     }
   }
 }
