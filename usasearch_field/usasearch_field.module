@@ -79,8 +79,10 @@ function usasearch_field_field_is_empty($item, $field) {
  */
 function usasearch_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
 
-  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
   $element = array();
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
+  $field_name = $field['field_name'];
+
   switch ($display['type']) {
     case 'usasearch_field_affiliate_formatter':
       foreach ($items as $delta => $item) {
@@ -88,7 +90,7 @@ function usasearch_field_field_formatter_view($entity_type, $entity, $field, $in
         module_load_include('inc', 'search', 'search.pages');
         // We pass the string 'usasearch_field' as a build argument so that
         // subsequent form_alter() implementation can utilize it.
-        $form_id = 'usasearch_field_search_box_' . $bundle . '_' . $id;
+        $form_id = 'usasearch_field_search_box_' . $id . '_' . $field_name . '_' . $delta;
         $form = drupal_get_form($form_id, NULL, NULL, NULL, NULL, 'usasearch_field', $item['usasearch_field_affiliate']);
         $element[$delta] = $form;
       }
@@ -110,7 +112,6 @@ function usasearch_field_form_alter(&$form, &$form_state, $form_id) {
         '#type' => 'hidden',
         '#value' => $form_state['build_info']['args'][5],
       );
-      $form['actions']['submit']['#name'] = 'op-' . $form['#id'];
       $form['search_block_form']['#attributes']['placeholder'] = t('Search');
       unset($form['search_block_form']['#title']);
       $form['#submit'][] = 'usasearch_field_form_submit';
