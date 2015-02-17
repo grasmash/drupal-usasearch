@@ -117,6 +117,7 @@ function usasearch_affiliates_list() {
  * Verifies that a given subsite is in list of configured subsites.
  *
  * @param string $affiliate_id
+ *   The affiliate id to verify.
  *
  * @return bool
  *   TRUE if the given subsite is in the list of configured subsites.

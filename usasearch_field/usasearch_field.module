@@ -79,6 +79,7 @@ function usasearch_field_field_is_empty($item, $field) {
  */
 function usasearch_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
 
+  list($id, $vid, $bundle) = entity_extract_ids($entity_type, $entity);
   $element = array();
   switch ($display['type']) {
     case 'usasearch_field_affiliate_formatter':
@@ -86,9 +87,9 @@ function usasearch_field_field_formatter_view($entity_type, $entity, $field, $in
 
         module_load_include('inc', 'search', 'search.pages');
         // We pass the string 'usasearch_field' as a build argument so that
-        // subsequent form_alter() implementation can recognize that this form
-        // was built by the usasearch_field module.
-        $form = drupal_get_form('search_block_form', NULL, NULL, NULL, NULL, 'usasearch_field', $item['usasearch_field_affiliate']);
+        // subsequent form_alter() implementation can utilize it.
+        $form_id = 'usasearch_field_search_box_' . $bundle . '_' . $id;
+        $form = drupal_get_form($form_id, NULL, NULL, NULL, NULL, 'usasearch_field', $item['usasearch_field_affiliate']);
         $element[$delta] = $form;
       }
       break;
@@ -103,12 +104,15 @@ function usasearch_field_field_formatter_view($entity_type, $entity, $field, $in
  */
 function usasearch_field_form_alter(&$form, &$form_state, $form_id) {
   // Search block and search box have similar form structure.
-  if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
+  if (strpos($form_id, 'usasearch_field_search_box_') !== FALSE) {
     if (!empty($form_state['build_info']['args'][4]) && $form_state['build_info']['args'][4] == 'usasearch_field') {
-      $form['affiliate']['#value'] = $form_state['build_info']['args'][5];
+      $form['affiliate'] = array(
+        '#type' => 'hidden',
+        '#value' => $form_state['build_info']['args'][5],
+      );
+      $form['actions']['submit']['#name'] = 'op-' . $form['#id'];
       $form['search_block_form']['#attributes']['placeholder'] = t('Search');
       unset($form['search_block_form']['#title']);
-
       $form['#submit'][] = 'usasearch_field_form_submit';
     }
   }
@@ -122,10 +126,27 @@ function usasearch_field_form_submit($form, &$form_state) {
   if (module_exists('usasearch_api') && !empty($form['affiliate']['#value'])) {
     $form_state['redirect'] = array(
       $form_state['redirect'],
-      array('query' => array(
-        'affiliate' => $form['affiliate']['#value'],
+      array(
+        'query' => array(
+          'affiliate' => $form['affiliate']['#value'],
         ),
       ),
     );
   }
+}
+
+/**
+ * Implements hook_forms().
+ */
+function usasearch_field_forms($form_id, $args) {
+  $forms = array();
+
+  if (strpos($form_id, 'usasearch_field_search_box_') !== FALSE) {
+    $forms[$form_id] = array(
+      'callback' => 'search_box',
+      'callback arguments' => array('search_block_form'),
+    );
+  }
+
+  return $forms;
 }
