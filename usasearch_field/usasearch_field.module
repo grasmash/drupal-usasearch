@@ -112,11 +112,26 @@ function usasearch_field_form_alter(&$form, &$form_state, $form_id) {
         '#type' => 'hidden',
         '#value' => $form_state['build_info']['args'][5],
       );
-      $form['search_block_form']['#attributes']['placeholder'] = t('Search');
-      unset($form['search_block_form']['#title']);
+      $form[$form_id]['#attributes']['placeholder'] = t('Search');
+      unset($form[$form_id]['#title']);
+
+      // Add our own validation callback to tbe beginning of #validate array.
+      array_unshift($form['#validate'], 'usasearch_field_form_validate');
+
+      // Add our own submit handler.
       $form['#submit'][] = 'usasearch_field_form_submit';
     }
   }
+}
+
+/**
+ * Validation callback for usasearch_field_form_alter() forms.
+ */
+function usasearch_field_form_validate($form, &$form_state) {
+  // This is done to prevent search_box_form_submit()'s validation from
+  // breaking.
+  $form_id = $form['#form_id'];
+  $form_state['values']['search_block_form'] = $form_state['values'][$form_id];
 }
 
 /**
@@ -145,7 +160,7 @@ function usasearch_field_forms($form_id, $args) {
   if (strpos($form_id, 'usasearch_field_search_box_') !== FALSE) {
     $forms[$form_id] = array(
       'callback' => 'search_box',
-      'callback arguments' => array('search_block_form'),
+      'callback arguments' => array($form_id),
     );
   }
 
