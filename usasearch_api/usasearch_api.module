@@ -2,301 +2,91 @@
 
 /**
  * @file
- * USA Search API search module.
+ * USA Search API module.
  */
 
 /**
- * Implements hook_menu().
+ * Implements hook_node_insert().
  */
-function usasearch_api_menu() {
-  $items = array();
-
-  $items['search/advanced'] = array(
-    'title' => 'Advanced Search',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('usasearch_api_advanced_form'),
-    'access arguments' => array('use advanced search'),
-    'file' => 'usasearch_api.inc',
-    'type' => MENU_LOCAL_TASK,
-  );
-
-  return $items;
+function usasearch_api_node_insert($node) {
+  usasearch_api_modify_node_record('create', $node);
 }
 
 /**
- * Implements hook_search_info().
+ * Implements hook_node_update().
  */
-function usasearch_api_search_info() {
-  return array(
-    'title' => 'All',
-    'path' => 'all',
-    'conditions_callback' => 'usasearch_api_conditions',
-  );
+function usasearch_api_node_update($node) {
+  usasearch_api_modify_node_record('update', $node);
 }
 
 /**
- * Implements hook_cron().
+ * Implements hook_node_delete().
  */
-function usasearch_api_cron() {
-  module_load_include('inc', 'usasearch_api');
-  usasearch_api_fetch_logo();
+function usasearch_api_node_delete($node) {
+  usasearch_api_modify_node_record('delete', $node);
 }
 
 /**
- * Callback for conditions_callback property in hook_search_info().
- */
-function usasearch_api_conditions($keys) {
-  $conditions = array();
-
-  $params = array(
-    'sort_by',
-    'all',
-    'exact',
-    'any',
-    'none',
-    'affiliate',
-  );
-
-  foreach ($params as $param) {
-    if (!empty($_REQUEST[$param])) {
-      $conditions[$param] = check_plain($_REQUEST[$param]);
-    }
-  }
-
-  // Allow other modules to modify these search conditions. This is leveraged
-  // by the usasearch_subsites module.
-  drupal_alter('usasearch_api_conditions', $conditions);
-
-  return $conditions;
-}
-
-/**
- * Implements hook_search_execute().
- */
-function usasearch_api_search_execute($keys = NULL, $conditions = NULL) {
-  // $conditions has been sanitized by usasearch_api_conditions().
-  // $keys has not been sanitized up to this point, so that html entities
-  // are not inserted as the default value for the keys field.
-  $keys = check_plain($keys);
-
-  module_load_include('inc', 'usasearch_api');
-  $module = 'usasearch_api';
-  $results = usasearch_api_get_results($keys, $conditions, $module);
-
-  return $results;
-}
-
-/**
- * Implements hook_form_alter().
- */
-function usasearch_api_form_alter(&$form, &$form_state, $form_id) {
-
-  if ($form_id == 'search_form') {
-    $params = drupal_get_query_parameters();
-
-    // For sites with multiple affiliate ids, add affiliate parameter.
-    $form['affiliate'] = array(
-      '#type' => 'hidden',
-      '#default_value' => isset($params['affiliate']) ? check_plain($params['affiliate']) : '',
-    );
-    $form['#validate'][] = 'usasearch_api_search_form_validate';
-
-    // Add advanced search link.
-    $adv_link_options = array('query' => array_merge(array('all' => arg(2)), $params));
-    $form['advanced'] = array(
-      '#markup' => l(t('Advanced Search'), 'search/advanced', $adv_link_options),
-    );
-
-    // Load response from static cache.
-    // This relies on usasearch_api_request() having been already called.
-    $response = &drupal_static('usasearch_api_request');
-
-    if (!empty($response)) {
-      module_load_include('inc', 'usasearch_api');
-      $link_options = array('query' => $params);
-
-      // Include a 'did you mean' spelling suggestion if it was returned.
-      // @todo Add variable to enable or disable this.
-      if (!empty($response['spelling_suggestion'])) {
-        $suggestion = check_plain($response['spelling_suggestion']);
-        $suggestion_link = l($suggestion, $form_state['action'] . '/' . $suggestion, $link_options);
-        $form['spelling_suggestion'] = array(
-          '#markup' => t('Did you mean !suggestion?', array('!suggestion' => $suggestion_link)),
-        );
-      }
-
-      // Include 'related search' fieldset if it was returned.
-      // @todo Add variable to enable or disable this.
-      if (!empty($response['related'])) {
-        $form['related'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Related Searches'),
-        );
-        foreach ($response['related'] as $key => $related) {
-          $related_link = l(check_plain($related), $form_state['action'] . '/' . check_plain($related), $link_options);
-          $form['related'][$key] = array(
-            '#prefix' => '<div class="related-search">',
-            '#markup' => $related_link,
-            '#suffix' => '</div>',
-          );
-        }
-      }
-
-      // Display for web, docs, and image searches. This is required by the
-      // USASearch Terms of Service.
-      if (in_array($form['module']['#value'], array(
-        'usasearch_api',
-        'usasearch_docs',
-        'usasearch_images'))) {
-        $form['logo'] = usasearch_api_logo();
-        $form['logo']['#weight'] = 100;
-      }
-    }
-
-    if (!empty($params['affiliate']) && module_exists('usasearch_field')) {
-      $affiliates = usasearch_affiliates_list();
-      $affiliate_id = check_plain($params['affiliate']);
-      $affiliate = !empty($affiliates[$affiliate_id]) ? $affiliates[$affiliate_id] : $affiliate_id;
-      $form['affiliate_title'] = array(
-        '#prefix' => '<div class="usasearch-affiliate-title">',
-        '#markup' => t('Searching within @affiliate', array('@affiliate' => $affiliate)),
-        '#suffix' => '</div>',
-      );
-    }
-
-    // Replace the default submit function with our own.
-    $form['#submit'][] = 'usasearch_api_search_form_submit';
-    if (($key = array_search('search_form_submit', $form['#submit'])) !== FALSE) {
-      unset($form['#submit'][$key]);
-    }
-  }
-}
-
-/**
- * Validation handler for search_form.
- */
-function usasearch_api_search_form_validate(&$form, &$form_state) {
-  if (!empty($form_state['values']['affiliate'])) {
-    $affiliate = check_plain($form_state['values']['affiliate']);
-    module_load_include('inc', 'usasearch_api');
-    if (usasearch_is_affiliate($affiliate)) {
-      // Add value to $form_state['conditions'], which will be used to
-      // set the form destination in usasearch_api_search_form_submit().
-      $form_state['conditions']['affiliate'] = $form_state['values']['affiliate'];
-    }
-  }
-}
-
-/**
- * Submit callback for search form when using API mode.
+ * Modifies the document record in USA Search's index for a specific node.
  *
- * This is very similar to search_form_submit, but it passes the additional
- * parameters from $form_state['conditions'].
- *
- * @see search_submit()
+ * @return array
+ *   The parsed JSON response from USASearch.
  */
-function usasearch_api_search_form_submit($form, &$form_state) {
+function usasearch_api_modify_node_record($operation, $node) {
 
-  $keys = $form_state['values']['processed_keys'];
-  if ($keys == '') {
-    form_set_error('keys', t('Please enter some keywords.'));
-    // Fall through to the form redirect.
-  }
+  $document = usasearch_api_convert_node_to_document($node);
+  $affiliate = variable_get('usasearch_affiliate_name', 'test_index');
+  $password = variable_get('usasearch_api_password', 'test_key');
+  $debug = variable_get('usasearch_api_debug', TRUE);
 
-  // Create destination.
-  $destination = array($form_state['action'] . '/' . $keys);
-  if (!empty($form_state['conditions'])) {
-    $destination[1]['query'] = array();
-    foreach ($form_state['conditions'] as $key => $value) {
-      // Values will be sanitized before usage in implementation of
-      // callback_search_conditions().
-      $destination[1]['query'][$key] = $value;
+  // Query the API.
+  try {
+    if ($debug) {
+      watchdog('usasearch_api', 'USA Search request document: !document', array('!document' => '<pre>' . print_r($document, TRUE) . '</pre>'));
     }
+
+    $client = new UsaSearchClient($affiliate, $password);
+    drupal_alter('usasearch_api_document_request', $document);
+    $method = "{$operation}Document";
+    $response = $client->$method($document);
+    dpm($response);
+
+    if ($debug) {
+      watchdog('usasearch_api', 'USA Search response: @response', array('@response' => '<pre>' . print_r($response, TRUE) . '</pre>'));
+    }
+
+    return $response;
+  }
+  catch (Exception $e) {
+    dpm($e->getMessage());
+    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
   }
 
-  $form_state['redirect'] = $destination;
+  return FALSE;
 }
 
 /**
- * Implements template_preprocess_search_result().
+ * Converts a node object into a UsaSearchDocument object.
  *
- * The primary purpose is to remove check_plain() from $result['title'] so
- * that it may contain HTML like <b></b>. Otherwise, this is unchanged from
- * original.
+ * @param object $node
+ *   A node object to convert.
  *
- * @see template_preprocess_search_result()
+ * @return UsaSearchDocument
+ *   A UsaSearchDocument based on the provided $node object.
  */
-function usasearch_api_preprocess_search_result(&$variables) {
-  global $language;
+function usasearch_api_convert_node_to_document($node) {
+  $document = new UsaSearchDocument();
+  $document->setDocumentId($node->nid);
+  $document->setTitle($node->title);
 
-  $result = $variables['result'];
-  $variables['url'] = check_url($result['link']);
-  $variables['title'] = filter_xss($result['title'], array('b'));
-  if (isset($result['language']) && $result['language'] != $language->language && $result['language'] != LANGUAGE_NONE) {
-    $variables['title_attributes_array']['xml:lang'] = $result['language'];
-    $variables['content_attributes_array']['xml:lang'] = $result['language'];
-  }
+  // Set node content property.
+  $view = node_view($node);
+  $content = drupal_render($view);
+  $document->setContent($content);
 
-  $info = array();
-  if (!empty($result['module'])) {
-    $info['module'] = check_plain($result['module']);
-  }
-  if (!empty($result['user'])) {
-    $info['user'] = $result['user'];
-  }
-  if (!empty($result['date'])) {
-    $info['date'] = format_date($result['date'], 'short');
-  }
-  if (isset($result['extra']) && is_array($result['extra'])) {
-    $info = array_merge($info, $result['extra']);
-  }
-  // Check for existence. User search does not include snippets.
-  $variables['snippet'] = isset($result['snippet']) ? $result['snippet'] : '';
-  // Provide separated and grouped meta information..
-  $variables['info_split'] = $info;
-  $variables['info'] = implode(' - ', $info);
-  $variables['theme_hook_suggestions'][] = 'search_result__' . $variables['module'];
-}
+  $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
+  $document->setCreated($node->created);
+  $document->setPromote((bool) $node->promote);
 
-/**
- * Implements hook_block_info().
- */
-function usasearch_api_block_info() {
-
-  // This block displays a <ul> of links to subsite search pages.
-  $blocks['usasearch_affiliates'] = array(
-    'info' => t('USASearch: Affiliates'),
-  );
-  $blocks['usasearch_boosted_results'] = array(
-    'info' => t('USASearch: Boosted Results'),
-    // This block cannot be cached because it displays dynamic search results.
-    'cache' => DRUPAL_NO_CACHE,
-  );
-
-  return $blocks;
-}
-
-
-/**
- * Implements hook_block_view().
- */
-function usasearch_api_block_view($delta = '') {
-  switch ($delta) {
-    case 'usasearch_boosted_results':
-      $response = &drupal_static('usasearch_api_request');
-
-      $block['subject'] = t('Boosted Results');
-      // @todo theme boosted results.
-      // $block['content'] = usasearch_format_boosted_results();
-      $block['content'] = '';
-      break;
-
-    case 'usasearch_affiliates':
-      $block['subject'] = t('Affiliates');
-
-      module_load_include('inc', 'usasearch_api');
-      $block['content'] = usasearch_api_affiliate_links();
-      break;
-  }
-  return $block;
+  return $document;
 }

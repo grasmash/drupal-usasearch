@@ -5,6 +5,7 @@ configure = admin/config/search/usasearch
 package = USASearch
 
 files[] = UsaSearchClient.inc
+files[] = UsaSearchDocument.inc
 dependencies[] = usasearch
 dependencies[] = composer_manager
 dependencies[] = ctools

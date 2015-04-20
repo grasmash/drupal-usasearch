@@ -1,7 +1,0 @@
-name = USASearch Video News
-description = Provides video news search for the USA Search module.
-core = 7.x
-configure = admin/config/search/usasearch
-package = USASearch
-
-dependencies[] = usasearch_api

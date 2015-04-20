@@ -11,52 +11,72 @@ class UsaSearchClient extends Client {
 
   protected $affiliate;
   protected $apiUrl;
+  protected $password;
 
   /**
    * Constructor.
    */
-  public function __construct($affiliate) {
-    $this->apiUrl = 'http://search.usa.gov/api';
+  public function __construct($affiliate, $password) {
+    $this->apiUrl = 'http://173.203.40.169:8081';
     parent::__construct($this->apiUrl);
 
     // Set all requests to include the 'affiliate' parameter.
     $this->affiliate = $affiliate;
-    $this->setDefaultOption('query', array('affiliate' => $this->affiliate));
+    $this->password = $password;
+    $this->setDefaultOption('auth', array($affiliate, $password));
+    $this->setDefaultOption('timeout', 5);
+    $this->setDefaultOption('connect_timeout', 5);
+    $this->setDefaultOption('headers', array('Content-Type' => 'application/json'));
   }
 
   /**
-   * Sends a search request.
+   * Creates a document record in USASearch's index.
    *
-   * @param string $query
-   *   The string of keywords.
-   *
-   * @param string $dc
-   *   (optional) The document collection. Defaults to none.
-   *
-   * @param int $page
-   *   (optional). The search result page offset, used for pagination.
-   *   Defaults to 1.
-   *
-   * @param string $index
-   *   (optional) The USASearch index to search. Default to 'web'.
+   * @param \UsaSearchDocument $document
+   *   The document to be created.
    *
    * @return array
-   *   The response, including results.
+   *   The JSON response from USASearch.
    */
-  public function search($query, $dc = '', $page = 1, $index = 'web') {
+  public function createDocument(UsaSearchDocument $document) {
+    $request = $this->post('api/v1/documents');
+    $request->setBody($document->json());
+    $response = $request->send();
+    $data = $response->json();
 
-    // @todo Add ability to include 'sort_by' parameter.
-    $request = $this->get('search.json', array(), array(
-      'query' => array(
-        'query' => $query,
-        'page' => $page,
-        'dc' => $dc,
-        'index' => $index,
-      ),
-      'timeout' => 5,
-      'connect_timeout' => 5,
-    ));
+    return $data;
+  }
 
+  /**
+   * Updates a document record in USASearch's index.
+   *
+   * @param \UsaSearchDocument $document
+   *   The document to be updated.
+   *
+   * @return array
+   *   The JSON response from USASearch.
+   */
+  public function updateDocument(UsaSearchDocument $document) {
+    $request = $this->put('api/v1/documents/' . $document->getDocumentId());
+    $request->setBody($document->json());
+    $response = $request->send();
+    $data = $response->json();
+
+    return $data;
+  }
+
+  /**
+   * Deletes a document record in USASearch's index.
+   *
+   * @param \UsaSearchDocument $document
+   *   The document to be deleted.
+   *
+   * @return array
+   *   The JSON response from USASearch.
+   */
+  public function deleteDocument(UsaSearchDocument $document) {
+    $request = $this->delete('api/v1/documents/' . $document->getDocumentId());
+    $request->setBody($document->json());
     $response = $request->send();
     $data = $response->json();
 
