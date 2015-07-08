@@ -21,6 +21,7 @@ function usasearch_api_node_insert($node) {
  * Implements hook_node_update().
  */
 function usasearch_api_node_update($node) {
+  // @todo Check to see if node actually changed.
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
@@ -67,14 +68,23 @@ function usasearch_api_request($method, $url, $request_options = array()) {
 
   try {
     $response = $client->$method($url, $request_options);
-    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: @options.', array(
+    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
       '@method' => $method,
       '@url' => $url,
-      '@options' => print_r($request_options, TRUE),
+      '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
+      '@response_code' => $response->getStatusCode(),
+      '@response_body' => $response->getBody(),
     ), WATCHDOG_INFO);
   }
   catch (Exception $e) {
     watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
+      '@method' => $method,
+      '@url' => $url,
+      '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
+      '@response_code' => $e->getResponse()->getStatusCode(),
+      '@response_body' => $e->getResponse()->getBody(),
+    ), WATCHDOG_INFO);
   }
 }
 
@@ -88,16 +98,22 @@ function usasearch_api_request($method, $url, $request_options = array()) {
  *   A UsaSearchDocument based on the provided $node object.
  */
 function usasearch_api_convert_node_to_document($node) {
+  global $user;
+
   $document = new UsaSearchDocument();
   $document->setDocumentId($node->nid);
   $document->setTitle($node->title);
 
   // Set node content property.
+  $original_uid = $user->uid;
+  $user->uid = 0;
   $view = node_view($node);
   $content = drupal_render($view);
   $document->setContent($content);
-  $document->setDescription($content);
+  $user->uid = $original_uid;
 
+  // @todo Remove setDescription(). Shouldn't be required by API but it is.
+  $document->setDescription('This is a placeholder');
   $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
   $document->setCreated(date('c', $node->created));
   $document->setPromote((bool) $node->promote);
