@@ -2,6 +2,9 @@
 
 /**
  * Class UsaSearchDocument.
+ *
+ * Objects of this class conform to USA Search's standard document model for
+ * use with their content API.
  */
 class UsaSearchDocument {
   protected $document_id;
@@ -23,6 +26,11 @@ class UsaSearchDocument {
    * @param mixed $document_id
    */
   public function setDocumentId($document_id) {
+    // @todo add validation for web-safe string.
+    if (!preg_match('/[A-Za-z0-9_-]+/', $document_id)) {
+      throw new Exception("The document id property must be a web safe string, containing only alpanumeric characters and/or the following characters: '-, _'");
+    }
+
     $this->document_id = $document_id;
   }
 
@@ -37,6 +45,10 @@ class UsaSearchDocument {
    * @param mixed $title
    */
   public function setTitle($title) {
+    if (!is_string($title)) {
+      throw Exception("The title property must be a string!");
+    }
+
     $this->title = $title;
   }
 
@@ -51,6 +63,9 @@ class UsaSearchDocument {
    * @param mixed $path
    */
   public function setPath($path) {
+
+    // @todo Validate absolute URL. Relative?
+
     $this->path = $path;
   }
 
@@ -65,6 +80,8 @@ class UsaSearchDocument {
    * @param mixed $created
    */
   public function setCreated($created) {
+    // Validate ISO format date.
+
     $this->created = $created;
   }
 
@@ -79,6 +96,10 @@ class UsaSearchDocument {
    * @param mixed $description
    */
   public function setDescription($description) {
+    if (!is_string($description)) {
+      throw Exception("The description property must be a string!");
+    }
+
     $this->description = $description;
   }
 
@@ -93,6 +114,10 @@ class UsaSearchDocument {
    * @param mixed $promote
    */
   public function setPromote($promote) {
+    if (!is_bool($promote)) {
+      throw Exception("The promote property must be a boolean value, either TRUE or FALSE.");
+    }
+
     $this->promote = $promote;
   }
 
@@ -107,10 +132,19 @@ class UsaSearchDocument {
    * @param mixed $content
    */
   public function setContent($content) {
+    if (!is_string($content)) {
+      throw Exception("The content property must be a string!");
+    }
+
     $this->content = $content;
   }
 
+  /**
+   * @return string
+   *   Returns a JSON object representation of the document, compatible with
+   *   USA Search's API.
+   */
   public function json() {
-    return json_encode(get_object_vars($this));
+    return get_object_vars($this);
   }
 }

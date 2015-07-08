@@ -3,7 +3,6 @@
   "type": "drupal-module",
   "description": "Use the USASearch API.",
   "keywords": ["usasearch", "search"],
-  "homepage": "",
   "license": "GPL-2.0+",
   "authors": [
     {
@@ -22,8 +21,8 @@
     }
   ],
   "require": {
-    "php": ">=5.3.2",
-    "guzzle/guzzle": "3.8.*"
+    "php": ">=5.4.0",
+    "guzzlehttp/guzzle": "~5.0"
   }
 }
 

@@ -9,60 +9,73 @@
  * Implements hook_node_insert().
  */
 function usasearch_api_node_insert($node) {
-  usasearch_api_modify_node_record('create', $node);
+  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
+    return FALSE;
+  }
+
+  $document = usasearch_api_convert_node_to_document($node);
+  usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
 }
 
 /**
  * Implements hook_node_update().
  */
 function usasearch_api_node_update($node) {
-  usasearch_api_modify_node_record('update', $node);
+  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
+    return FALSE;
+  }
+
+  $document = usasearch_api_convert_node_to_document($node);
+  usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
 }
 
 /**
  * Implements hook_node_delete().
  */
 function usasearch_api_node_delete($node) {
-  usasearch_api_modify_node_record('delete', $node);
+  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
+    return FALSE;
+  }
+
+  $document = usasearch_api_convert_node_to_document($node);
+  usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
 }
 
 /**
- * Modifies the document record in USA Search's index for a specific node.
+ * @param string $method
+ *   The HTTP method to be used via Guzzle.
  *
- * @return array
- *   The parsed JSON response from USASearch.
+ * @param $url
+ *   The URL of the endpoint resource to which the HTTP request will be made.
+ *
+ * @param array $request_options
+ *   An array of options passed directly to the Guzzle request.
+ *
+ * @see http://gsa.github.io/slate
+ * @see http://guzzle.readthedocs.org/en/5.3/quickstart.html
  */
-function usasearch_api_modify_node_record($operation, $node) {
+function usasearch_api_request($method, $url, $request_options = array()) {
+  $client = new GuzzleHttp\Client(array(
+    'base_url' => 'https://i14y.usa.gov',
+    'defaults' => array(
+      'timeout'  => 5,
+      'connect_timeout'  => 5,
+      'auth'  => array(variable_get('usasearch_affiliate_name', ''), variable_get('usasearch_api_password', '')),
+      'headers' => array('Content-Type' => 'application/json'),
+    ),
+  ));
 
-  $document = usasearch_api_convert_node_to_document($node);
-  $affiliate = variable_get('usasearch_affiliate_name', 'test_index');
-  $password = variable_get('usasearch_api_password', 'test_key');
-  $debug = variable_get('usasearch_api_debug', TRUE);
-
-  // Query the API.
   try {
-    if ($debug) {
-      watchdog('usasearch_api', 'USA Search request document: !document', array('!document' => '<pre>' . print_r($document, TRUE) . '</pre>'));
-    }
-
-    $client = new UsaSearchClient($affiliate, $password);
-    drupal_alter('usasearch_api_document_request', $document);
-    $method = "{$operation}Document";
-    $response = $client->$method($document);
-    dpm($response);
-
-    if ($debug) {
-      watchdog('usasearch_api', 'USA Search response: @response', array('@response' => '<pre>' . print_r($response, TRUE) . '</pre>'));
-    }
-
-    return $response;
+    $response = $client->$method($url, $request_options);
+    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: @options.', array(
+      '@method' => $method,
+      '@url' => $url,
+      '@options' => print_r($request_options, TRUE),
+    ), WATCHDOG_INFO);
   }
   catch (Exception $e) {
-    dpm($e->getMessage());
-    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()));
+    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
   }
-
-  return FALSE;
 }
 
 /**
@@ -83,10 +96,49 @@ function usasearch_api_convert_node_to_document($node) {
   $view = node_view($node);
   $content = drupal_render($view);
   $document->setContent($content);
+  $document->setDescription($content);
 
   $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
-  $document->setCreated($node->created);
+  $document->setCreated(date('c', $node->created));
   $document->setPromote((bool) $node->promote);
+
+  drupal_alter('usasearch_api_document_request', $document);
 
   return $document;
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function usasearch_api_form_usasearch_admin_alter(&$form, &$form_state, $form_id) {
+  $form['usasearch_api_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('i14y API Secret Token'),
+    '#default_value' => variable_get('usasearch_api_password', ''),
+    '#required' => TRUE,
+    '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function usasearch_api_form_node_type_form_alter(&$form, &$form_state, $form_id) {
+  $node_type = $form['#node_type']->type;
+  $variable_name = "usasearch_api_index_{$node_type}_nodes";
+
+  $form['usasearch_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('USA Search settings'),
+    '#group' => 'additional_settings',
+  );
+
+  $form['usasearch_settings'][$variable_name] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Notify USA Search about changes to nodes of this type'),
+    '#description' => t('If selected, USA Search will be notified when @type nodes are created, updated, or deleted', array('@type' => $node_type)),
+    '#default_value' => variable_get($variable_name, TRUE),
+  );
+}
+
+// @todo Add core actions integration.
