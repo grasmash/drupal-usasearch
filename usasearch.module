@@ -60,7 +60,6 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-
 /**
  * Implements hook_preprocess_page().
  *
