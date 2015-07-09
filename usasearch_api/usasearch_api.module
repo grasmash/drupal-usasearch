@@ -21,7 +21,6 @@ function usasearch_api_node_insert($node) {
  * Implements hook_node_update().
  */
 function usasearch_api_node_update($node) {
-  // @todo Check to see if node actually changed.
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
@@ -157,4 +156,49 @@ function usasearch_api_form_node_type_form_alter(&$form, &$form_state, $form_id)
   );
 }
 
-// @todo Add core actions integration.
+/**
+ * Implements hook_action_info().
+ */
+function usasearch_api_action_info() {
+  return array(
+    'usasearch_api_create_doc_action' => array(
+      'label' => t('Create record of node in the USASearch index.'),
+      'type' => 'node',
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+    ),
+    'usasearch_api_update_doc_action' => array(
+      'label' => t('Update record of node in the USASearch index.'),
+      'type' => 'node',
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+    ),
+    'usasearch_api_delete_doc_action' => array(
+      'label' => t('Delete record of node in the USASearch index.'),
+      'type' => 'node',
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+    ),
+  );
+}
+
+/**
+ * Action function for usasearch_api_create_doc_action.
+ */
+function usasearch_api_create_doc_action($node, $context) {
+  usasearch_api_node_insert($node);
+}
+
+/**
+ * Action function for usasearch_api_update_doc_action.
+ */
+function usasearch_api_update_doc_action($node, $context) {
+  usasearch_api_node_update($node);
+}
+
+/**
+ * Action function for usasearch_api_delete_doc_action.
+ */
+function usasearch_api_delete_doc_action($node, $context) {
+  usasearch_api_node_delete($node);
+}
