@@ -38,7 +38,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
           'ui-autocomplete-input',
           'ui-corner-all'),
         'autocomplete' => 'off',
-        'type ' => 'text',
+        'type' => 'text',
         // Adding the id attribute can cause issues that rely on default Drupal
         // ids for form elements. It does not appear to be necessary for
         // typeahead to function. So, we leave it out.
