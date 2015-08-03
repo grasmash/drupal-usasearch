@@ -54,7 +54,7 @@ dependencies. Namely, it will download Guzzle to the sites/all/vendor directory.
 
 #### Configuration
 To configure this module, you will need your USASearch's unique
-Affiliate handle.  Login at https://search.usa.gov/affiliates and
+Affiliate site handle.  Login at https://search.usa.gov/affiliates and
 select Dashboard / Settings in the left side menu in the site you want to
 use. In the URL of the page that loads, look for
 "affiliate=example.gov". "example.gov" is the Affiliate name in
