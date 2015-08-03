@@ -28,7 +28,7 @@ Installation
   * USASearch API: Provides real time updates to USASearch's index when Drupal
     nodes are created, modified, or deleted.
   * USASearch field: Makes available a "USASearch" field type, which can be
-    added to Drupal entities to render a USASearch box that will search a 
+    added to Drupal entities to render a USASearch box that will search a
     specific affiliate ID. This is useful when used in a Fieldable Panel Pane
     in a microsite.
   * USASearch Index: Generates a machine-readable index of all nodes that can
@@ -54,11 +54,14 @@ dependencies. Namely, it will download Guzzle to the sites/all/vendor directory.
 
 #### Configuration
 To configure this module, you will need your USASearch's unique
-Affiliate name.  Login at https://search.usa.gov/affiliates and
-click the "View Current" link next to the affiliate you want to
+Affiliate handle.  Login at https://search.usa.gov/affiliates and
+select Dashboard / Settings in the left side menu in the site you want to
 use. In the URL of the page that loads, look for
 "affiliate=example.gov". "example.gov" is the Affiliate name in
 this example.
+For indexing you will need the i14y drawer handle.Login at https://search.usa.gov/affiliates and
+select Content / i14y Drawers in the left side menu. If needed Add i14y Drawer and enter
+an i14y drawer handle or select Show to display the i14y drawer handle.
 
 Features
 --------

@@ -12,7 +12,6 @@ function usasearch_api_node_insert($node) {
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
-
   $document = usasearch_api_convert_node_to_document($node);
   usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
 }
@@ -60,7 +59,7 @@ function usasearch_api_request($method, $url, $request_options = array()) {
     'defaults' => array(
       'timeout'  => 5,
       'connect_timeout'  => 5,
-      'auth'  => array(variable_get('usasearch_affiliate_name', ''), variable_get('usasearch_api_password', '')),
+      'auth'  => array(variable_get('usasearch_drawer_handle', ''), variable_get('usasearch_api_password', '')),
       'headers' => array('Content-Type' => 'application/json'),
     ),
   ));
