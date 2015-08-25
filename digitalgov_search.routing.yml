@@ -1,0 +1,11 @@
+digitalgov_search.settings:
+  path: /admin/config/search/digitalgov_search
+  defaults:
+    _form: '\Drupal\digitalgov_search\Form\ConfigForm'
+    _title: 'DigitalGov Search Settings'
+  requirements:
+    _permission: 'configure_digitalgov_search'
+digitalgov_search.help:
+  path: 'admin/help/digitalgov_search'
+  requirements:
+    _permission: 'configure_digitalgov_search'

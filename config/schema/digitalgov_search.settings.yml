@@ -1,0 +1,16 @@
+digitalgov_search.settings:
+  type: mapping
+  label: 'DigitalGov Search Module Settings'
+  mapping:
+    affiliate_name:
+      type: string
+      label: 'Affilate Name'
+    autocomplete:
+      type: boolean
+      label: 'Enable autocomplete'
+    action_domain:
+      type: uri
+      label: 'Search domain'
+    allowed_affiliates:
+      type: string
+      label: 'Allowed Affliate IDs'

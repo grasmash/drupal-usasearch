@@ -1,7 +1,0 @@
-name = USASearch Field
-description = Provides a USASearch field, which may be used to search unique affiliate ids.
-core = 7.x
-configure = admin/config/search/usasearch
-package = USASearch
-
-dependencies[] = usasearch
