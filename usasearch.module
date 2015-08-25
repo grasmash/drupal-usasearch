@@ -7,9 +7,9 @@ use Drupal\Core\Routing\RouteMatchInterface;
 /**
  * Implements hook_help().
  */
-function digitalgov_search_help($route_name, RouteMatchInterface $route_match) {
+function usasearch_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
-    case 'digitalgov_search.help':
+    case 'usasearch.help':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!digitalgov-search-module">the online documentation</a></p>');
@@ -31,5 +31,5 @@ function digitalgov_search_help($route_name, RouteMatchInterface $route_match) {
 
 
 //TODO: look into the hook_theme_suggestions_alter() in D8 to set the block template
-//block_digitalgov_search_search_block
+//block_usasearch_search_block
 

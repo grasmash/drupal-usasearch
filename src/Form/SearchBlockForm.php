@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\digitalgov_search\Form\SearchBlockForm.
+ * Contains \Drupal\usasearch\Form\SearchBlockForm.
  */
 
-namespace Drupal\digitalgov_search\Form;
+namespace Drupal\usasearch\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBase;
@@ -61,7 +61,7 @@ class SearchBlockForm extends FormBase {
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'digitalgov_search_search_block_form';
+    return 'usasearch_search_block_form';
   }
 
   /**
@@ -70,9 +70,9 @@ class SearchBlockForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     //Set the action from module settings
-    //$config = \Drupal::config('digitalgov_search.settings');
-    $action = $this->config('digitalgov_search.settings')->get('action_domain');
-    $use_type_ahead = $this->config('digitalgov_search.settings')->get('autocomplete');
+    //$config = \Drupal::config('usasearch.settings');
+    $action = $this->config('usasearch.settings')->get('action_domain');
+    $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
     $form['#action'] = $action;
     $form['#token'] = FALSE;

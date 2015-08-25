@@ -1,0 +1,11 @@
+usasearch.settings:
+  path: /admin/config/search/usasearch
+  defaults:
+    _form: '\Drupal\usasearch\Form\ConfigForm'
+    _title: 'DigitalGov Search Settings'
+  requirements:
+    _permission: 'configure_usasearch'
+usasearch.help:
+  path: 'admin/help/usasearch'
+  requirements:
+    _permission: 'configure_usasearch'

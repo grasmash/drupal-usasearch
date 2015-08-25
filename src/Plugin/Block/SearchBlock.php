@@ -2,10 +2,10 @@
 
 /**
  * @file
- * Contains \Drupal\digitalgov_search\Plugin\Block\SearchBlock.
+ * Contains \Drupal\usasearch\Plugin\Block\SearchBlock.
  */
 
-namespace Drupal\digitalgov_search\Plugin\Block;
+namespace Drupal\usasearch\Plugin\Block;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Session\AccountInterface;
@@ -16,7 +16,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * Provides a 'Search form' block.
  *
  * @Block(
- *   id = "digitalgov_search_search_form_block",
+ *   id = "usasearch_search_form_block",
  *   admin_label = @Translation("DigitalGov Search form"),
  *   category = @Translation("Forms")
  * )
@@ -35,7 +35,7 @@ class SearchBlock extends BlockBase {
    */
   public function build() {
     //TODO: look at the Cache API to see if I can get/set the block from cache
-    return \Drupal::formBuilder()->getForm('Drupal\digitalgov_search\Form\SearchBlockForm');
+    return \Drupal::formBuilder()->getForm('Drupal\usasearch\Form\SearchBlockForm');
   }
 
 }

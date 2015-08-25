@@ -1,4 +1,0 @@
-services:
-  digitalgov_search.digitalgov_search_tracker:
-    class: Drupal\digitalgov_search\DigitalgovSearchTracker
-    arguments: ['@state']

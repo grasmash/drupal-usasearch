@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\digitalgov_search;
+namespace Drupal\usasearch;
 
 use Drupal\Core\State\StateInterface;
 
-class DigitalgovSearchTracker {
+class UsasearchTracker {
 
   /**
    * @var \Drupal\Core\State\StateInterface
@@ -16,11 +16,11 @@ class DigitalgovSearchTracker {
   }
 
   public function addHug($target_name) {
-    $this->state->set('DigitalgovSearch.last_recipient', $target_name);
+    $this->state->set('usasearch.last_recipient', $target_name);
     return $this;
   }
 
   public function getLastRecipient() {
-    return $this->state->get('DigitalgovSearch.last_recipient');
+    return $this->state->get('usasearch.last_recipient');
   }
 }

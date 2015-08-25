@@ -1,17 +1,22 @@
 <?php
 
-namespace Drupal\digitalgov_search\Form;
+/**
+ * @file
+ * Contains \Drupal\usasearch\Form\ConfigForm.
+ */
+
+namespace Drupal\usasearch\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
 class ConfigForm extends ConfigFormBase {
   public function getFormId() {
-    return 'digitalgov_search_settings';
+    return 'usasearch_settings';
   }
 
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $config = $this->config('digitalgov_search.settings');
+    $config = $this->config('usasearch.settings');
 
     $form['affiliate_name'] = [
       '#type' => 'textfield',
@@ -52,7 +57,7 @@ class ConfigForm extends ConfigFormBase {
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
-    $config = $this->config('digitalgov_search.settings')
+    $config = $this->config('usasearch.settings')
       ->set('affiliate_name', $form_state->getValue('affiliate_name'))
       ->set('autocomplete', $form_state->getValue('autocomplete'))
       ->set('action_domain', $form_state->getValue('action_domain'))
@@ -61,6 +66,6 @@ class ConfigForm extends ConfigFormBase {
   }
 
   public function getEditableConfigNames() {
-    return ['digitalgov_search.settings'];
+    return ['usasearch.settings'];
   }
 }
