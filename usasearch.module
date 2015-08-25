@@ -38,4 +38,13 @@ function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInter
 
 //TODO: look into the hook_theme_suggestions_alter() in D8 to set the block template
 //block_usasearch_search_block
+/**
+ * Implements hook_theme_suggestions_HOOK().
+ */
+// function usasearch_theme_suggestions_search_block(array $variables) {
+//   $suggestions = array();
+//   $suggestions[] = 'block--usasearch--search-block';
+//   return $suggestions;
+// }
+
 

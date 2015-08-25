@@ -70,34 +70,32 @@ class SearchBlockForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    //$config = \Drupal::config('usasearch.settings');
-
-    //action url string including affiliate as querystring param
     $options = array(
         'absolute'  => TRUE,
       );
     $actionUrl = Url::fromUri($this->config('usasearch.settings')->get('action_domain'), $options)->toString();
+    $affiliate_name = $this->config('usasearch.settings')->get('affiliate_name');
     $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
     $form['#action'] = $actionUrl;
     $form['#method'] = 'GET';
-    //turn off default autocomplete if using the Type Ahead API
-    $form['#autocomplete'] = $use_type_ahead ? 'off' : 'on';
-    //add hosted digitalgov search querystring params
-    $form['affiliate'] = array(
-      '#type'   => 'hidden',
-      '#value'  => $this->config('usasearch.settings')->get('affiliate_name'),
 
-      );
+    //add hosted digitalgov search querystring params
+    $form['affiliate']['#type'] = 'hidden';
+    if ($affiliate_name && empty($form['affiliate']['#value'])) {
+      $form['affiliate']['#value'] = $affiliate_name;
+    }
     $form['query'] = array(
       '#type' => 'search',
       '#title' => $this->t('Search'),
       '#title_display' => 'invisible',
-      '#size' => 15,
       '#default_value' => '',
       '#attributes' => array(
+          'id' => 'query',
           'title' => $this->t('Enter the terms you wish to search for.'),
           'placeholder' => $this->t('Search'),
+          'class' => 'usagov-search-autocomplete',
+          'autocomplete' => $use_type_ahead ? 'off' : 'on',
         ),
     );
     $form['actions'] = array('#type' => 'actions');
