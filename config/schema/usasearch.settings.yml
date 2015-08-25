@@ -9,7 +9,7 @@ digitalgov_search.settings:
       type: boolean
       label: 'Enable autocomplete'
     action_domain:
-      type: uri
+      type: string
       label: 'Search domain'
     allowed_affiliates:
       type: string

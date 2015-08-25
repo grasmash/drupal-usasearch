@@ -3,6 +3,8 @@
 use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_help().
@@ -18,16 +20,20 @@ function usasearch_help($route_name, RouteMatchInterface $route_match) {
   }
 }
 
-
-//TODO: can I set the querystring params from search block in this preprocess??
 /**
- * Implements hook_preprocess_HOOK() for block templates.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * alter the block search form so that drupal's token attributes are not passed
+ * to the action as querystring params
+ *
+ * @see \Drupal\usasearch\Form\SearchBlockForm::buildForm()
  */
-// function search_preprocess_block(&$variables) {
-//   if ($variables['plugin_id'] == 'search_form_block') {
-//     $variables['attributes']['role'] = 'search';
-//   }
-// }
+function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInterface $form_state) {
+    $form['#token'] = FALSE;
+    $form['form_id']['#access'] = FALSE;
+    $form['form_build_id']['#access'] = FALSE;
+    $form['form_token']['#access'] = FALSE;
+}
 
 
 //TODO: look into the hook_theme_suggestions_alter() in D8 to set the block template
