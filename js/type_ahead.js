@@ -15,12 +15,13 @@
   Drupal.behaviors.usasearchTypeAhead = {
     attach: function () {
 
-      var config = drupalSettings.usasearch;
+      var moduleConfig = drupalSettings.usasearch;
 
-      if(config.affiliate_name && typeof config.affiliate_name !== 'undefined'
-          && config.type_ahead && typeof config.type_ahead !== 'undefined' ) {
+      if(moduleConfig.affiliate_name && typeof moduleConfig.affiliate_name !== 'undefined'
+          && moduleConfig.type_ahead && typeof moduleConfig.type_ahead !== 'undefined' ) {
           //load the type ahead script
-          var usasearch_config = { siteHanlde : config.affiliate_name };
+          var usasearch_config = { siteHandle : moduleConfig.affiliate_name };
+          window.usasearch_config = usasearch_config;
           var script = document.createElement("script");
           script.type = "text/javascript";
           script.src = "//search.usa.gov/javascripts/remote.loader.js";

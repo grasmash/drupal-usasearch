@@ -37,19 +37,19 @@ class SearchBlock extends BlockBase {
     //TODO: look at the Cache API to see if I can get/set the block from cache
 
     //get the search form
-    $usasearch_form = \Drupal::formBuilder()->getForm('Drupal\usasearch\Form\SearchBlockForm');
+    $block = \Drupal::formBuilder()->getForm('Drupal\usasearch\Form\SearchBlockForm');
     //add the block's config to drupalSettings
     $config = \Drupal::config('usasearch.settings');
     $affiliate_name = $config->get('affiliate_name');
     $use_type_ahead = $config->get('autocomplete');
-    $usasearch_form['#attached']['drupalSettings']['usasearch']['type_ahead'] = $use_type_ahead ? TRUE : FALSE;
-    $usasearch_form['#attached']['drupalSettings']['usasearch']['affiliate_name'] = $affiliate_name ? $affiliate_name : '';
+    $block['#attached']['drupalSettings']['usasearch']['type_ahead'] = $use_type_ahead ? TRUE : FALSE;
+    $block['#attached']['drupalSettings']['usasearch']['affiliate_name'] = $affiliate_name ? $affiliate_name : '';
     if ($use_type_ahead) {
       //add the type_ahead js library
-      $usasearch_form['#attached']['library'][] = 'usasearch/type_ahead';
+      $block['#attached']['library'][] = 'usasearch/type_ahead';
     }
 
-    return $usasearch_form;
+    return $block;
   }
 
 }

@@ -11,7 +11,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\RendererInterface;
-use Drupal\search\SearchPageRepositoryInterface;
+//use Drupal\search\SearchPageRepositoryInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -70,21 +70,16 @@ class SearchBlockForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $options = array(
-        'absolute'  => TRUE,
-      );
-    $actionUrl = Url::fromUri($this->config('usasearch.settings')->get('action_domain'), $options)->toString();
+    //TODO: what needs to be done if the config uses multiple affiliates in the "allowed_affiliates" setting???
+
+    $actionUrl = Url::fromUri($this->config('usasearch.settings')->get('action_domain'), $options = array('absolute' => TRUE))->toString();
     $affiliate_name = $this->config('usasearch.settings')->get('affiliate_name');
     $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
     $form['#action'] = $actionUrl;
     $form['#method'] = 'GET';
 
-    //add hosted digitalgov search querystring params
-    $form['affiliate']['#type'] = 'hidden';
-    if ($affiliate_name && empty($form['affiliate']['#value'])) {
-      $form['affiliate']['#value'] = $affiliate_name;
-    }
+    //the search field
     $form['query'] = array(
       '#type' => 'search',
       '#title' => $this->t('Search'),
@@ -94,10 +89,19 @@ class SearchBlockForm extends FormBase {
           'id' => 'query',
           'title' => $this->t('Enter the terms you wish to search for.'),
           'placeholder' => $this->t('Search'),
-          'class' => 'usagov-search-autocomplete',
+          'class' => array('usagov-search-autocomplete'),
           'autocomplete' => $use_type_ahead ? 'off' : 'on',
+          'aria-autocomplete' => 'list',
+          'aria-haspopup' => TRUE,
         ),
     );
+
+    //the affiliate name
+    $form['affiliate']['#type'] = 'hidden';
+    if ($affiliate_name && empty($form['affiliate']['#value'])) {
+      $form['affiliate']['#value'] = $affiliate_name;
+    }
+
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['submit'] = array(
       '#type' => 'submit',
