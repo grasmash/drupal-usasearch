@@ -45,7 +45,9 @@ class ConfigForm extends ConfigFormBase {
         <em>NOTE: Only change this if DigitalGov has configured this option for your search affiliate</em>'),
 
     ];
+    //TODO: enable "allowed affiliates" after figuring out how to wire up this setting
     $form['allowed_affiliates'] = [
+      '#disabled' => TRUE,
       '#type' => 'textarea',
       '#title' => $this->t('Allowed Affliate IDs'),
       '#default_value' => $config->get('allowed_affiliates'),

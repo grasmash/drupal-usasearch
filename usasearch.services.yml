@@ -1,4 +1,1 @@
 services:
-  usasearch.usasearch_tracker:
-    class: Drupal\usasearch\UsasearchTracker
-    arguments: ['@state']
