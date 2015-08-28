@@ -1,4 +1,4 @@
-digitalgov_search.settings:
+usasearch.settings:
   type: mapping
   label: 'DigitalGov Search Module Settings'
   mapping:
