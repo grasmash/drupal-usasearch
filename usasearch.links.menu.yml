@@ -1,0 +1,5 @@
+digitalgov_search.settings:
+  title: 'DigitalGov Search'
+  description: 'Contains settings for customizing site search to use DigitalGov Search.'
+  route_name: usasearch.settings
+  parent: system.admin_config_search

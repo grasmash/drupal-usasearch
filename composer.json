@@ -1,0 +1,6 @@
+{
+    "name": "drupal/usasearch",
+    "description": "DigitalGov Search module",
+    "type": "drupal-module",
+    "license": "GPL-2.0+"
+}
