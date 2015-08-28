@@ -1,0 +1,8 @@
+type_ahead:
+  version: 1.x
+  js: 
+    js/type_ahead.js: {}
+  dependencies: 
+    - core/jquery
+    - core/drupalSettings
+    - core/jquery.once
