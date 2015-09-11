@@ -282,6 +282,6 @@ function usasearch_api_update_index() {
     //watchdog("usasearch_api", "Adding ".$node->nid." to index", NULL, WATCHDOG_NOTICE, NULL);
     // Update index
     usasearch_api_node_insert($node);
-    search_index($node->nid, 'node', $text);
+    //search_index($node->nid, 'node', $text);
   }
 }
