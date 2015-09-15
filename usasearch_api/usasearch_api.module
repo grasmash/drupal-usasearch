@@ -242,13 +242,13 @@ dpm('got cron?');
   }
 }
 
-function usasearch_api_search_info() {
-  return array(
-    'title' => 'USASearch',
-    'path' => 'node',
-    'conditions_callback' => 'callback_search_conditions',
-  );
-}
+// function usasearch_api_search_info() {
+//   return array(
+//     'title' => 'USASearch',
+//     'path' => 'node',
+//     'conditions_callback' => 'callback_search_conditions',
+//   );
+// }
 
 /**
  * Implements hook_update_index().
@@ -256,11 +256,12 @@ function usasearch_api_search_info() {
  * @see node_update_index()
  */
 function usasearch_api_update_index() {
-  $limit = (int)variable_get('search_cron_limit', 100);
 
+  $limit = (int)variable_get('search_cron_limit', 100);
   $result = db_query_range("SELECT n.nid FROM {node} n LEFT JOIN {search_dataset} d ON d.type = 'node' AND d.sid = n.nid WHERE d.sid IS NULL OR d.reindex <> 0 ORDER BY d.reindex ASC, n.nid ASC", 0, $limit);
 
   foreach ($result as $node) {
+
     $node = node_load($node->nid);
 
     // Save the changed time of the most recent indexed node, for the search
@@ -279,9 +280,7 @@ function usasearch_api_update_index() {
     foreach ($extra as $t) {
       $text .= $t;
     }
-    //watchdog("usasearch_api", "Adding ".$node->nid." to index", NULL, WATCHDOG_NOTICE, NULL);
     // Update index
-    usasearch_api_node_insert($node);
-    //search_index($node->nid, 'node', $text);
+    search_index($node->nid, 'node', $text);
   }
 }
