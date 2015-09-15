@@ -13,20 +13,11 @@ function usasearch_admin() {
 
   $form['usasearch_affiliate_name'] = array(
     '#type' => 'textfield',
-    '#title' => t('Affiliate site handle'),
+    '#title' => t('Site handle'),
     '#default_value' => variable_get('usasearch_affiliate_name', ''),
     '#size' => 30,
     '#maxlength' => 30,
     '#description' => t('Please enter your affiliate site handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "example.gov".', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
-    '#required' => TRUE,
-  );
-  $form['usasearch_drawer_handle'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Drawer handle'),
-    '#default_value' => variable_get('usasearch_drawer_handle', ''),
-    '#size' => 30,
-    '#maxlength' => 30,
-    '#description' => t('Please enter the i14y drawer handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "mydrawer".'),
     '#required' => TRUE,
   );
   $form['usasearch_autocomplete'] = array(
@@ -43,6 +34,15 @@ function usasearch_admin() {
     '#maxlength' => 50,
     '#description' => t('You may enter a custom search domain, eg. "http://search.commerce.gov", or leave the default "http://search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
     '#required' => FALSE,
+  );
+  $form['usasearch_drawer_handle'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Drawer handle'),
+    '#default_value' => variable_get('usasearch_drawer_handle', ''),
+    '#size' => 30,
+    '#maxlength' => 30,
+    '#description' => t('Please enter the i14y drawer handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "mydrawer".'),
+    '#required' => TRUE,
   );
 
   return system_settings_form($form);
