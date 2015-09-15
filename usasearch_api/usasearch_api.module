@@ -124,6 +124,7 @@ function usasearch_api_convert_node_to_document($node) {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
+// TODO decide whether to move this to main module
 function usasearch_api_form_usasearch_admin_alter(&$form, &$form_state, $form_id) {
   $form['usasearch_api_password'] = array(
     '#type' => 'textfield',
@@ -200,4 +201,86 @@ function usasearch_api_update_doc_action($node, $context) {
  */
 function usasearch_api_delete_doc_action($node, $context) {
   usasearch_api_node_delete($node);
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function usasearch_api_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'cron') {
+    unset($implementations['search']);
+  }
+}
+
+/**
+ * implimentation of hook_form_alter()
+ */
+function usasearch_api_form_search_admin_settings_alter(&$form, &$form_state, $form_id){
+  $items = drupal_map_assoc(array(10, 20, 50, 100, 200, 500,1000,10000));
+  $form['indexing_throttle']['search_cron_limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of items to index per cron run'),
+    '#default_value' => variable_get('search_cron_limit', 100),
+    '#options' => $items,
+    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/reports/status')))
+  );
+}
+
+/**
+ * Implements hook_cron().
+ *
+ * @see search_cron()
+ */
+function usasearch_api_cron() {
+  // We register a shutdown function to ensure that search_total is always up
+  // to date.
+  drupal_register_shutdown_function('search_update_totals');
+dpm('got cron?');
+  foreach (variable_get('search_active_modules', array('node', 'user')) as $module) {
+    // Update word index
+    $module == 'node' ? module_invoke('usasearch_api', 'update_index') : module_invoke($module, 'update_index');
+  }
+}
+
+// function usasearch_api_search_info() {
+//   return array(
+//     'title' => 'USASearch',
+//     'path' => 'node',
+//     'conditions_callback' => 'callback_search_conditions',
+//   );
+// }
+
+/**
+ * Implements hook_update_index().
+ *
+ * @see node_update_index()
+ */
+function usasearch_api_update_index() {
+
+  $limit = (int)variable_get('search_cron_limit', 100);
+  $result = db_query_range("SELECT n.nid FROM {node} n LEFT JOIN {search_dataset} d ON d.type = 'node' AND d.sid = n.nid WHERE d.sid IS NULL OR d.reindex <> 0 ORDER BY d.reindex ASC, n.nid ASC", 0, $limit);
+
+  foreach ($result as $node) {
+
+    $node = node_load($node->nid);
+
+    // Save the changed time of the most recent indexed node, for the search
+    // results half-life calculation.
+    variable_set('node_cron_last', $node->changed);
+
+    // Render the node.
+    node_build_content($node, 'search_index');
+    $node->rendered = drupal_render($node->content);
+
+    $text = '<h1>' . check_plain($node->title) . '</h1>' . $node->rendered;
+    // Post document to DigitalGov Search i14y drawer
+    usasearch_api_node_insert($node);
+    // Fetch extra data normally not visible
+    $extra = module_invoke_all('node_update_index', $node);
+    foreach ($extra as $t) {
+      $text .= $t;
+    }
+    // Update index
+    search_index($node->nid, 'node', $text);
+  }
 }

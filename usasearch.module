@@ -10,12 +10,27 @@
 function usasearch_menu() {
   $items = array();
 
+  // definition for additional tab.
+  $items['admin/config/search/settings'] = array(
+    'title' => 'Search settings',
+    'description' => 'Configure relevance settings for search and other indexing options.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('search_admin_settings'),
+    'access arguments' => array('administer search'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+    'file path' => base_path(),
+    'file' => '/'.drupal_get_path('module', 'search').'/search.admin.inc',
+  );
+
   $items['admin/config/search/usasearch'] = array(
     'title' => 'USASearch settings',
     'description' => 'Contains settings for customizing site search to use USASearch',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_admin'),
     'access arguments' => array('administer search'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
     'file' => 'usasearch.admin.inc',
   );
   return $items;
