@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Replaces Drupal search, redirects all search queries to USASearch service.
@@ -20,7 +21,7 @@ function usasearch_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
     'file path' => base_path(),
-    'file' => '/'.drupal_get_path('module', 'search').'/search.admin.inc',
+    'file' => '/' . drupal_get_path('module', 'search') . '/search.admin.inc',
   );
 
   $items['admin/config/search/usasearch'] = array(
@@ -51,7 +52,8 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
       $attributes = array(
         'class' => array('usagov-search-autocomplete',
           'ui-autocomplete-input',
-          'ui-corner-all'),
+          'ui-corner-all',
+        ),
         'autocomplete' => 'off',
         'type' => 'text',
         // Adding the id attribute can cause issues that rely on default Drupal
@@ -70,7 +72,6 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
           $form[$form_id]['#attributes'] = $attributes;
           break;
       }
-
     }
   }
 }
@@ -139,3 +140,4 @@ function usasearch_is_affiliate($affiliate_id) {
 
   return array_key_exists($affiliate_id, $subsites);
 }
+

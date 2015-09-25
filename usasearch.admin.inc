@@ -44,6 +44,14 @@ function usasearch_admin() {
     '#description' => t('Please enter the i14y drawer handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "mydrawer".'),
     '#required' => TRUE,
   );
+  $form['usasearch_api_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('i14y API Secret Token'),
+    '#default_value' => variable_get('usasearch_api_password', ''),
+    '#required' => TRUE,
+    '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
+  );
 
   return system_settings_form($form);
 }
+

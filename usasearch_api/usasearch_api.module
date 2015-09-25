@@ -41,6 +41,8 @@ function usasearch_api_node_delete($node) {
 }
 
 /**
+ /**
+ *
  * @param string $method
  *   The HTTP method to be used via Guzzle.
  *
@@ -55,35 +57,42 @@ function usasearch_api_node_delete($node) {
  */
 function usasearch_api_request($method, $url, $request_options = array()) {
   $client = new GuzzleHttp\Client(array(
-    'base_url' => 'https://i14y.usa.gov',
-    'defaults' => array(
-      'timeout'  => 5,
-      'connect_timeout'  => 5,
-      'auth'  => array(variable_get('usasearch_drawer_handle', ''), variable_get('usasearch_api_password', '')),
-      'headers' => array('Content-Type' => 'application/json'),
-    ),
-  ));
+      'base_url' => 'https://i14y.usa.gov',
+      'defaults' => array(
+        'timeout' => 5,
+        'connect_timeout' => 5,
+        'auth' => array(variable_get('usasearch_drawer_handle', ''), variable_get('usasearch_api_password', '')),
+        'headers' => array('Content-Type' => 'application/json'),
+      ),
+    ));
 
   try {
     $response = $client->$method($url, $request_options);
     watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
-      '@method' => $method,
-      '@url' => $url,
-      '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
-      '@response_code' => $response->getStatusCode(),
-      '@response_body' => $response->getBody(),
-    ), WATCHDOG_INFO);
+        '@method' => $method,
+        '@url' => $url,
+        '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
+        '@response_code' => $response->getStatusCode(),
+        '@response_body' => $response->getBody(),
+      ), WATCHDOG_INFO);
   }
-  catch (Exception $e) {
+  catch(Exception$e) {
     watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
     watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
-      '@method' => $method,
-      '@url' => $url,
-      '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
-      '@response_code' => $e->getResponse()->getStatusCode(),
-      '@response_body' => $e->getResponse()->getBody(),
-    ), WATCHDOG_INFO);
+        '@method' => $method,
+        '@url' => $url,
+        '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
+        '@response_code' => $e->getResponse()->getStatusCode(),
+        '@response_body' => $e->getResponse()->getBody(),
+      ), WATCHDOG_INFO);
   }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function usasearch_api_preprocess_node(&$vars) {
+  $vars['title'] = '';
 }
 
 /**
@@ -104,8 +113,9 @@ function usasearch_api_convert_node_to_document($node) {
 
   // Set node content property.
   $original_uid = $user->uid;
-  $user->uid = 0;
+
   $view = node_view($node);
+  $user = drupal_anonymous_user();
   $content = drupal_render($view);
   $document->setContent($content);
   $user->uid = $original_uid;
@@ -119,20 +129,6 @@ function usasearch_api_convert_node_to_document($node) {
   drupal_alter('usasearch_api_document_request', $document);
 
   return $document;
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-// TODO decide whether to move this to main module
-function usasearch_api_form_usasearch_admin_alter(&$form, &$form_state, $form_id) {
-  $form['usasearch_api_password'] = array(
-    '#type' => 'textfield',
-    '#title' => t('i14y API Secret Token'),
-    '#default_value' => variable_get('usasearch_api_password', ''),
-    '#required' => TRUE,
-    '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
-  );
 }
 
 /**
@@ -215,14 +211,15 @@ function usasearch_api_module_implements_alter(&$implementations, $hook) {
 /**
  * implimentation of hook_form_alter()
  */
-function usasearch_api_form_search_admin_settings_alter(&$form, &$form_state, $form_id){
-  $items = drupal_map_assoc(array(10, 20, 50, 100, 200, 500,1000,10000));
+function usasearch_api_form_search_admin_settings_alter(&$form, &$form_state, $form_id) {
+  $items = drupal_map_assoc(array(10, 20, 50, 100, 200, 500, 1000, 10000));
   $form['indexing_throttle']['search_cron_limit'] = array(
     '#type' => 'select',
     '#title' => t('Number of items to index per cron run'),
     '#default_value' => variable_get('search_cron_limit', 100),
     '#options' => $items,
-    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron">cron maintenance task</a>. If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron' => url('admin/reports/status')))
+    '#description' => t('The maximum number of items indexed in each pass of a <a href="@cron_link">cron maintenance task</a>.
+  If necessary, reduce the number of items to prevent timeouts and memory errors while indexing.', array('@cron_link' => url('admin/reports/status/run-cron'))),
   );
 }
 
@@ -235,20 +232,11 @@ function usasearch_api_cron() {
   // We register a shutdown function to ensure that search_total is always up
   // to date.
   drupal_register_shutdown_function('search_update_totals');
-dpm('got cron?');
   foreach (variable_get('search_active_modules', array('node', 'user')) as $module) {
     // Update word index
     $module == 'node' ? module_invoke('usasearch_api', 'update_index') : module_invoke($module, 'update_index');
   }
 }
-
-// function usasearch_api_search_info() {
-//   return array(
-//     'title' => 'USASearch',
-//     'path' => 'node',
-//     'conditions_callback' => 'callback_search_conditions',
-//   );
-// }
 
 /**
  * Implements hook_update_index().
@@ -284,3 +272,4 @@ function usasearch_api_update_index() {
     search_index($node->nid, 'node', $text);
   }
 }
+
