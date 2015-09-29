@@ -78,13 +78,16 @@ function usasearch_api_request($method, $url, $request_options = array()) {
   }
   catch(Exception$e) {
     watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
-    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
-        '@method' => $method,
-        '@url' => $url,
-        '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
-        '@response_code' => $e->getResponse()->getStatusCode(),
-        '@response_body' => $e->getResponse()->getBody(),
+    watchdog('usasearch_api','The JSON sent was <br />'.'<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',array('!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>'), WATCHDOG_ERROR);
+    if($e->getResponse()->getStatusCode()) {
+      watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
+          '@method' => $method,
+          '@url' => $url,
+          '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
+          '@response_code' => $e->getResponse()->getStatusCode(),
+          '@response_body' => $e->getResponse()->getBody(),
       ), WATCHDOG_INFO);
+    }
   }
 }
 
@@ -93,6 +96,9 @@ function usasearch_api_request($method, $url, $request_options = array()) {
  */
 function usasearch_api_preprocess_node(&$vars) {
   $vars['title'] = '';
+  if($vars['content']['links']) {
+    unset($vars['content']['links']);
+  }
 }
 
 /**
@@ -118,10 +124,10 @@ function usasearch_api_convert_node_to_document($node) {
   $user = drupal_anonymous_user();
   $content = drupal_render($view);
   $document->setContent($content);
-  $user->uid = $original_uid;
 
-  // @todo Remove setDescription(). Shouldn't be required by API but it is.
-  $document->setDescription('This is a placeholder');
+  // Set Description to using teaser.
+  $document->setDescription(drupal_render(node_view($node, 'teaser')));
+  $user->uid = $original_uid;
   $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
   $document->setCreated(date('c', $node->created));
   $document->setPromote((bool) $node->promote);
