@@ -17,7 +17,7 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_affiliate_name', ''),
     '#size' => 30,
     '#maxlength' => 30,
-    '#description' => t('Please enter your affiliate site handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "example.gov".', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
+    '#description' => t('Please enter the handle for the <a href="@usasearch_affiliates_url">DigitalGov</a> Search site you want to send your content to, e.g., "dept-agency.gov"', array('@usasearch_affiliates_url' => url('https://search.usa.gov/affiliates'))),
     '#required' => TRUE,
   );
   $form['usasearch_autocomplete'] = array(
@@ -32,7 +32,7 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_action_domain', 'search.usa.gov'),
     '#size' => 30,
     '#maxlength' => 50,
-    '#description' => t('You may enter a custom search domain, eg. "http://search.commerce.gov", or leave the default "http://search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
+    '#description' => t('<strong>Only change this field if you have completed set up for a CNAME with DigitalGov Search and in your agency\'s external DNS records!</strong> This will change the search form action to submit search requests to the search domain entered. If you would like a domain mask for your search results page, but have not yet requested a CNAME be set up for your site, send a request to search@support.digitalgov.gov.'),
     '#required' => FALSE,
   );
   $form['usasearch_drawer_handle'] = array(
@@ -41,7 +41,7 @@ function usasearch_admin() {
     '#default_value' => variable_get('usasearch_drawer_handle', ''),
     '#size' => 30,
     '#maxlength' => 30,
-    '#description' => t('Please enter the i14y drawer handle provided by <a href="@usasearch_affiliates_url">USASearch</a>, eg. "mydrawer".'),
+    '#description' => t('Please enter the handle for the i14y Drawer you created in the above site, where your content will be indexed, e.g. "agency" (See https://search.usa.gov/sites/YOURSITEID/i14y_drawers)'),
     '#required' => TRUE,
   );
   $form['usasearch_api_password'] = array(
@@ -49,7 +49,7 @@ function usasearch_admin() {
     '#title' => t('i14y API Secret Token'),
     '#default_value' => variable_get('usasearch_api_password', ''),
     '#required' => TRUE,
-    '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
+    '#description' => t('Enter the Secret Token provided in your search site: go to https://search.usa.gov/sites/YOURSITEID/i14y_drawers and click Show next to the drawer.'),
   );
 
   return system_settings_form($form);
