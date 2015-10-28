@@ -24,7 +24,7 @@ function usasearch_admin() {
     '#type' => 'checkbox',
     '#title' => t('Enable autocomplete'),
     '#default_value' => variable_get('usasearch_autocomplete', TRUE),
-    '#description' => t('Check this box to load USASearch javascript for autocompletion.'),
+    '#description' => t('Check this box to load the DigitalGov Search javascript for type-ahead search suggestions in your site\'s search box'),
   );
   $form['usasearch_action_domain'] = array(
     '#type' => 'textfield',
