@@ -23,7 +23,6 @@ function usasearch_api_node_update($node) {
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
-
   $document = usasearch_api_convert_node_to_document($node);
   usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
 }
@@ -35,7 +34,6 @@ function usasearch_api_node_delete($node) {
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
-
   $document = usasearch_api_convert_node_to_document($node);
   usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
 }
@@ -132,8 +130,15 @@ function usasearch_api_convert_node_to_document($node) {
   $document->setCreated(date('c', $node->created));
   $document->setPromote((bool) $node->promote);
 
-  drupal_alter('usasearch_api_document_request', $document);
+  //gather up all taxonomy fields and send in document tags field
+  $terms = usasearch_api_get_entity_terms('node', 'page', $node);
+  foreach($terms as $vocabulary => $term){
+    foreach($term as $key => $value){
+      $document->setTags($value);
+    }
+  }
 
+  drupal_alter('usasearch_api_document_request', $document);
   return $document;
 }
 
@@ -279,3 +284,45 @@ function usasearch_api_update_index() {
   }
 }
 
+/**
+ * @param $entity_type
+ * @param $bundle
+ * @param $entity
+ * @param bool|TRUE $keyed_by_vocabulary
+ * @return array
+ */
+function usasearch_api_get_entity_terms($entity_type, $bundle, $entity, $keyed_by_vocabulary = TRUE) {
+  $terms = array();
+  // Use very lightweight field info list to find relevant fields.
+  foreach (field_info_field_map() as $field_name => $field_info) {
+    if ($field_info['type'] <> "taxonomy_term_reference") {
+      continue;
+    }
+    if (array_key_exists($entity_type, $field_info['bundles'])) {
+      if (in_array($bundle, $field_info['bundles'][$entity_type])) {
+        if (isset($entity->{$field_name})) {
+          // Collect terms from fields for return.
+          $values = field_get_items($entity_type, $entity, $field_name);
+          foreach ((array)$values as $tid) {
+            if ($tid) {
+              if ($keyed_by_vocabulary) {
+                $term = taxonomy_term_load($tid['tid']);
+                $terms[$term->vocabulary_machine_name][$term->tid]
+                    = $term->name;
+              }
+              else {
+                $terms[] = $tid['tid'];
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  if ($keyed_by_vocabulary) {
+    return $terms;
+  }
+  else {
+    return array_unique($terms);
+  }
+}

@@ -13,6 +13,7 @@ class UsaSearchDocument {
   protected $path;
   protected $created;
   protected $description;
+  protected $tags;
   protected $promote;
 
   /**
@@ -137,6 +138,27 @@ class UsaSearchDocument {
     }
 
     $this->content = $content;
+  }
+
+  /**
+   * @return mixed
+   */
+  public function getTags() {
+    return $this->tags;
+  }
+
+  /**
+   * @param mixed $tags
+   */
+  public function setTags($tag) {
+    if (!is_string($tag)) {
+      throw Exception("The tags property must be a string!");
+    }
+    if(isset($this->tags)){
+      $this->tags .= ', '.$tag;
+    } else {
+      $this->tags .= $tag;
+    }
   }
 
   /**
