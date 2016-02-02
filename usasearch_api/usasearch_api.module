@@ -119,12 +119,14 @@ function usasearch_api_convert_node_to_document($node) {
   $original_uid = $user->uid;
 
   $view = node_view($node);
+  $view_teaser = node_view($node, 'teaser');
   $user = drupal_anonymous_user();
   $content = drupal_render($view);
+  $description = drupal_render($view_teaser);
   $document->setContent($content);
 
   // Set Description to using teaser.
-  $document->setDescription(drupal_render(node_view($node, 'teaser')));
+  $document->setDescription($description);
   $user->uid = $original_uid;
   $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
   $document->setCreated(date('c', $node->created));
@@ -132,13 +134,18 @@ function usasearch_api_convert_node_to_document($node) {
 
   //gather up all taxonomy fields and send in document tags field
   $terms = usasearch_api_get_entity_terms('node', 'page', $node);
-  foreach($terms as $vocabulary => $term){
-    foreach($term as $key => $value){
-      $document->setTags($value);
-    }
-  }
 
+  if(!empty($terms)){
+    foreach ($terms as $vocabulary => $term) {
+      foreach ($term as $key => $value) {
+        $document->setTags($value);
+      }
+    }
+  } else {
+    $document->setTags('no tags');
+  }
   drupal_alter('usasearch_api_document_request', $document);
+
   return $document;
 }
 

@@ -13,8 +13,8 @@ class UsaSearchDocument {
   protected $path;
   protected $created;
   protected $description;
-  protected $tags;
   protected $promote;
+  protected $tags;
 
   /**
    * @return mixed
@@ -157,7 +157,7 @@ class UsaSearchDocument {
     if(isset($this->tags)){
       $this->tags .= ', '.$tag;
     } else {
-      $this->tags .= $tag;
+      $this->tags = $tag;
     }
   }
 
