@@ -134,15 +134,13 @@ function usasearch_api_convert_node_to_document($node) {
 
   //gather up all taxonomy fields and send in document tags field
   $terms = usasearch_api_get_entity_terms('node', 'page', $node);
-
+  $document->setTags($node->type);
   if(!empty($terms)){
     foreach ($terms as $vocabulary => $term) {
       foreach ($term as $key => $value) {
         $document->setTags($value);
       }
     }
-  } else {
-    $document->setTags('no tags');
   }
   drupal_alter('usasearch_api_document_request', $document);
 
