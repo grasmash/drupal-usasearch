@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Replaces Drupal search, redirects all search queries to USASearch service.
@@ -11,27 +10,12 @@
 function usasearch_menu() {
   $items = array();
 
-  // definition for additional tab.
-  $items['admin/config/search/settings'] = array(
-    'title' => 'Search settings',
-    'description' => 'Configure relevance settings for search and other indexing options.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('search_admin_settings'),
-    'access arguments' => array('administer search'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -10,
-    'file path' => base_path(),
-    'file' => '/' . drupal_get_path('module', 'search') . '/search.admin.inc',
-  );
-
   $items['admin/config/search/usasearch'] = array(
     'title' => 'USASearch settings',
     'description' => 'Contains settings for customizing site search to use USASearch',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('usasearch_admin'),
     'access arguments' => array('administer search'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 2,
     'file' => 'usasearch.admin.inc',
   );
   return $items;
@@ -46,18 +30,14 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
     $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
-    $autocomplete = 'off';
     if ($affiliate_name) {
-      if (variable_get('usasearch_autocomplete', TRUE)) {
-          $autocomplete = 'on';
-      }
+
       // Create attributes array for textfield.
       $attributes = array(
         'class' => array('usagov-search-autocomplete',
           'ui-autocomplete-input',
-          'ui-corner-all',
-        ),
-        'autocomplete' => $autocomplete,
+          'ui-corner-all'),
+        'autocomplete' => 'off',
         'type' => 'text',
         // Adding the id attribute can cause issues that rely on default Drupal
         // ids for form elements. It does not appear to be necessary for
@@ -75,6 +55,7 @@ function usasearch_form_alter(&$form, &$form_state, $form_id) {
           $form[$form_id]['#attributes'] = $attributes;
           break;
       }
+
     }
   }
 }
@@ -103,6 +84,7 @@ function usasearch_preprocess_page(&$variables) {
       $inline_js .= "document.getElementsByTagName('head')[0].appendChild(script);\n";
     }
   }
+
   // Output contents of $inline_js into one combined inline javascript tag using
   // drupal_add_js function.
   drupal_add_js($inline_js, array('type' => 'inline', 'scope' => 'footer'));
@@ -142,4 +124,3 @@ function usasearch_is_affiliate($affiliate_id) {
 
   return array_key_exists($affiliate_id, $subsites);
 }
-

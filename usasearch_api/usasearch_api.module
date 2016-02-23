@@ -13,18 +13,27 @@ function usasearch_api_node_insert($node) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
+  if($document){
+    usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
+  }
 }
 
 /**
  * Implements hook_node_update().
  */
 function usasearch_api_node_update($node) {
+//  Delete from index if node has been unpublished
+  if($node->status == 0){
+    usasearch_api_node_delete($node);
+    return;
+  }
   if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+  if($document) {
+    usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+  }
 }
 
 /**
@@ -35,7 +44,9 @@ function usasearch_api_node_delete($node) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
+  if($document) {
+    usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
+  }
 }
 
 /**
@@ -110,62 +121,49 @@ function usasearch_api_preprocess_node(&$vars) {
  */
 function usasearch_api_convert_node_to_document($node) {
   global $user;
-
-  $document = new UsaSearchDocument();
-  $document->setDocumentId($node->nid);
-  $document->setTitle($node->title);
-
-  // Set node content property.
   $original_uid = $user->uid;
+  $anon_user = drupal_anonymous_user();
 
-  $view = node_view($node);
-  $view_teaser = node_view($node, 'teaser');
-  $user = drupal_anonymous_user();
-  $content = drupal_render($view);
-  $description = drupal_render($view_teaser);
-  $document->setContent($content);
+  if (node_access('view', $node, $anon_user) || $node->status == 0) {
+    $document = new UsaSearchDocument();
+    $document->setDocumentId($node->nid);
+    $document->setTitle($node->title);
 
-  // Set Description to using teaser.
-  $document->setDescription($description);
-  $user->uid = $original_uid;
-  $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
-  $document->setCreated(date('c', $node->created));
-  $document->setPromote((bool) $node->promote);
+    $view = node_view($node);
 
-  //gather up all taxonomy fields and send in document tags field
-  $terms = usasearch_api_get_entity_terms('node', 'page', $node);
-  $document->setTags($node->type);
-  if(!empty($terms)){
-    foreach ($terms as $vocabulary => $term) {
-      foreach ($term as $key => $value) {
-        $document->setTags($value);
+    $view_mode = variable_get('usasearch_view_modes');
+    $available_view_modes = field_view_mode_settings('node', $node->type);
+    if (!array_key_exists($view_mode, $available_view_modes) || !$available_view_modes[$view_mode]['custom_settings']) {
+      $view_mode = 'teaser';
+    }
+    $view_teaser = node_view($node, $view_mode);
+
+    $content = drupal_render($view);
+    $description = drupal_render($view_teaser);
+    $document->setContent($content);
+
+    // Set Description to using teaser.
+    $document->setDescription($description);
+    //$user->uid = $original_uid;
+    $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
+    $document->setCreated(date('c', $node->created));
+    $document->setPromote((bool)$node->promote);
+
+    // Gather up all taxonomy fields and send in document tags field
+    $terms = usasearch_api_get_entity_terms('node', 'page', $node);
+    $document->setTags($node->type);
+    if (!empty($terms)) {
+      foreach ($terms as $vocabulary => $term) {
+        foreach ($term as $key => $value) {
+          $document->setTags($value);
+        }
       }
     }
+    drupal_alter('usasearch_api_document_request', $document);
+
+    return $document;
   }
-  drupal_alter('usasearch_api_document_request', $document);
-
-  return $document;
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function usasearch_api_form_node_type_form_alter(&$form, &$form_state, $form_id) {
-  $node_type = $form['#node_type']->type;
-  $variable_name = "usasearch_api_index_{$node_type}_nodes";
-
-  $form['usasearch_settings'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('USA Search settings'),
-    '#group' => 'additional_settings',
-  );
-
-  $form['usasearch_settings'][$variable_name] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Notify USA Search about changes to nodes of this type'),
-    '#description' => t('If selected, USA Search will be notified when @type nodes are created, updated, or deleted', array('@type' => $node_type)),
-    '#default_value' => variable_get($variable_name, TRUE),
-  );
+  //$user->uid = $original_uid;
 }
 
 /**
