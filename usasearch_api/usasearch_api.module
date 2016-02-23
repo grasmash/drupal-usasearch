@@ -13,7 +13,7 @@ function usasearch_api_node_insert($node) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  if($document){
+  if ($document) {
     usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
   }
 }
@@ -22,8 +22,8 @@ function usasearch_api_node_insert($node) {
  * Implements hook_node_update().
  */
 function usasearch_api_node_update($node) {
-//  Delete from index if node has been unpublished
-  if($node->status == 0){
+  //  Delete from index if node has been unpublished
+  if ($node->status == 0) {
     usasearch_api_node_delete($node);
     return;
   }
@@ -31,7 +31,7 @@ function usasearch_api_node_update($node) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  if($document) {
+  if ($document) {
     usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
   }
 }
@@ -44,7 +44,7 @@ function usasearch_api_node_delete($node) {
     return FALSE;
   }
   $document = usasearch_api_convert_node_to_document($node);
-  if($document) {
+  if ($document) {
     usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
   }
 }
@@ -87,15 +87,15 @@ function usasearch_api_request($method, $url, $request_options = array()) {
   }
   catch(Exception$e) {
     watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
-    watchdog('usasearch_api','The JSON sent was <br />'.'<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',array('!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>'), WATCHDOG_ERROR);
-    if($e->getResponse()->getStatusCode()) {
+    watchdog('usasearch_api', 'The JSON sent was <br />' . '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>', array('!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>'), WATCHDOG_ERROR);
+    if ($e->getResponse()->getStatusCode()) {
       watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
           '@method' => $method,
           '@url' => $url,
           '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
           '@response_code' => $e->getResponse()->getStatusCode(),
           '@response_body' => $e->getResponse()->getBody(),
-      ), WATCHDOG_INFO);
+        ), WATCHDOG_INFO);
     }
   }
 }
@@ -105,7 +105,7 @@ function usasearch_api_request($method, $url, $request_options = array()) {
  */
 function usasearch_api_preprocess_node(&$vars) {
   $vars['title'] = '';
-  if($vars['content']['links']) {
+  if ($vars['content']['links']) {
     unset($vars['content']['links']);
   }
 }
@@ -288,10 +288,12 @@ function usasearch_api_update_index() {
 }
 
 /**
+ *
  * @param $entity_type
  * @param $bundle
  * @param $entity
  * @param bool|TRUE $keyed_by_vocabulary
+ *
  * @return array
  */
 function usasearch_api_get_entity_terms($entity_type, $bundle, $entity, $keyed_by_vocabulary = TRUE) {
@@ -310,8 +312,7 @@ function usasearch_api_get_entity_terms($entity_type, $bundle, $entity, $keyed_b
             if ($tid) {
               if ($keyed_by_vocabulary) {
                 $term = taxonomy_term_load($tid['tid']);
-                $terms[$term->vocabulary_machine_name][$term->tid]
-                    = $term->name;
+                $terms[$term->vocabulary_machine_name][$term->tid] = $term->name;
               }
               else {
                 $terms[] = $tid['tid'];
@@ -329,3 +330,4 @@ function usasearch_api_get_entity_terms($entity_type, $bundle, $entity, $keyed_b
     return array_unique($terms);
   }
 }
+

@@ -17,6 +17,7 @@ class UsaSearchDocument {
   protected $tags;
 
   /**
+   *
    * @return mixed
    */
   public function getDocumentId() {
@@ -24,18 +25,20 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $document_id
    */
   public function setDocumentId($document_id) {
     // @todo add validation for web-safe string.
     if (!preg_match('/[A-Za-z0-9_-]+/', $document_id)) {
-      throw new Exception("The document id property must be a web safe string, containing only alpanumeric characters and/or the following characters: '-, _'");
+      thrownew Exception("The document id property must be a web safe string, containing only alpanumeric characters and/or the following characters: '-, _'");
     }
 
     $this->document_id = $document_id;
   }
 
   /**
+   *
    * @return mixed
    */
   public function getTitle() {
@@ -43,17 +46,19 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $title
    */
   public function setTitle($title) {
     if (!is_string($title)) {
-      throw Exception("The title property must be a string!");
+      throwException("The title property must be a string!");
     }
 
     $this->title = $title;
   }
 
   /**
+   *
    * @return mixed
    */
   public function getPath() {
@@ -61,6 +66,7 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $path
    */
   public function setPath($path) {
@@ -71,6 +77,7 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @return mixed
    */
   public function getCreated() {
@@ -78,6 +85,7 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $created
    */
   public function setCreated($created) {
@@ -87,6 +95,7 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @return mixed
    */
   public function getDescription() {
@@ -94,17 +103,19 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $description
    */
   public function setDescription($description) {
     if (!is_string($description)) {
-      throw Exception("The description property must be a string!");
+      throwException("The description property must be a string!");
     }
 
     $this->description = $description;
   }
 
   /**
+   *
    * @return mixed
    */
   public function getPromote() {
@@ -112,17 +123,19 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $promote
    */
   public function setPromote($promote) {
     if (!is_bool($promote)) {
-      throw Exception("The promote property must be a boolean value, either TRUE or FALSE.");
+      throwException("The promote property must be a boolean value, either TRUE or FALSE.");
     }
 
     $this->promote = $promote;
   }
 
   /**
+   *
    * @return mixed
    */
   public function getContent() {
@@ -130,17 +143,19 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $content
    */
   public function setContent($content) {
     if (!is_string($content)) {
-      throw Exception("The content property must be a string!");
+      throwException("The content property must be a string!");
     }
 
     $this->content = $content;
   }
 
   /**
+   *
    * @return mixed
    */
   public function getTags() {
@@ -148,20 +163,23 @@ class UsaSearchDocument {
   }
 
   /**
+   *
    * @param mixed $tags
    */
   public function setTags($tag) {
     if (!is_string($tag)) {
-      throw Exception("The tags property must be a string!");
+      throwException("The tags property must be a string!");
     }
-    if(isset($this->tags)){
-      $this->tags .= ', '.$tag;
-    } else {
+    if (isset($this->tags)) {
+      $this->tags .= ', ' . $tag;
+    }
+    else {
       $this->tags = $tag;
     }
   }
 
   /**
+   *
    * @return string
    *   Returns a JSON object representation of the document, compatible with
    *   USA Search's API.
@@ -170,3 +188,4 @@ class UsaSearchDocument {
     return get_object_vars($this);
   }
 }
+

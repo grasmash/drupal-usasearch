@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Install, update and uninstall functions for the usasearch module.
@@ -20,3 +21,4 @@ function usasearch_uninstall() {
   variable_del('usasearch_action_domain');
   variable_del('usasearch_search_page');
 }
+

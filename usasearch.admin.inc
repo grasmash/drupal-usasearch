@@ -30,11 +30,11 @@ function usasearch_admin() {
     '#required' => TRUE,
   );
   $form['usasearch_api_password'] = array(
-        '#type' => 'textfield',
-        '#title' => t('i14y API Secret Token'),
-        '#default_value' => variable_get('usasearch_api_password', ''),
-        '#required' => TRUE,
-        '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
+    '#type' => 'textfield',
+    '#title' => t('i14y API Secret Token'),
+    '#default_value' => variable_get('usasearch_api_password', ''),
+    '#required' => TRUE,
+    '#description' => t('To find this, login to your Digital Search account, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
   );
   $form['usasearch_autocomplete'] = array(
     '#type' => 'checkbox',
@@ -76,9 +76,11 @@ function usasearch_entity_view_modes($entity_type = NULL) {
   if (!empty($entity_type)) {
     switch ($entity_type) {
       // For taxonomy terms the base table and the entity type are different
+
       case 'taxonomy_term_data':
         $entity_info = entity_get_info('taxonomy_term');
         break;
+
       default:
         $entity_info = entity_get_info($entity_type);
         break;
@@ -86,3 +88,4 @@ function usasearch_entity_view_modes($entity_type = NULL) {
     return $entity_info['view modes'];
   }
 }
+

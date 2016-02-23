@@ -37,7 +37,8 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'search_block_form'
     || $form_id == 'search_theme_form'
     || $form_id == 'search_form'
-    || strpos($form_id, 'usasearch_field_search_box_') !== FALSE) {
+    || strpos($form_id, 'usasearch_field_search_box_') !== FALSE
+  ) {
     $action_domain = check_plain(variable_get('usasearch_action_domain', 'http://search.usa.gov'));
     $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
 
@@ -70,3 +71,4 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
     }
   }
 }
+

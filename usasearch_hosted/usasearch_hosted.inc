@@ -18,13 +18,14 @@ function usasearch_hosted_redirect($query = '') {
   // Check for query terms and use them in redirect if there.
   if ($query) {
     drupal_goto("$action_domain/search", array(
-      'query' => array(
-        'query' => $query,
-        'affiliate' => $affiliate_name,
-      ),
-    ));
+        'query' => array(
+          'query' => $query,
+          'affiliate' => $affiliate_name,
+        ),
+      ));
   }
   else {
     drupal_goto("$action_domain/search", array('query' => array('affiliate' => $affiliate_name)));
   }
 }
+
