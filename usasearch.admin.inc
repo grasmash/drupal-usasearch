@@ -51,18 +51,13 @@ function usasearch_admin() {
     '#description' => t('You may enter a custom search domain, eg. "http://search.commerce.gov", or leave the default "http://search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
     '#required' => FALSE,
   );
-  $entity_view_modes = usasearch_entity_view_modes('node');
-  foreach ($entity_view_modes as $key => $view_mode) {
-    $view_mode_options[$key] = $view_mode['label'];
-  }
   $form['usasearch_view_modes'] = array(
     '#type' => 'select',
     '#title' => t('Description view mode'),
-    '#options' => $view_mode_options,
+    '#options' => usasearch_entity_view_modes('node'),
     '#default_value' => 'teaser',
     '#description' => t('Select a preferred view mode to define description shown in search results. The view mode will need to be enabled and configured for each content type. <strong>If the view mode is not available for a content type "Teaser" will be used.</strong>'),
   );
-
   return system_settings_form($form);
 }
 
@@ -85,7 +80,10 @@ function usasearch_entity_view_modes($entity_type = NULL) {
         $entity_info = entity_get_info($entity_type);
         break;
     }
-    return $entity_info['view modes'];
+    foreach ($entity_info['view modes'] as $key => $view_mode) {
+      $view_mode_options[$key] = $view_mode['label'];
+    }
+    return $view_mode_options;
   }
 }
 

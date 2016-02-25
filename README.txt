@@ -1,4 +1,3 @@
-
 Contents of this file
 ---------------------
 
@@ -11,60 +10,95 @@ Contents of this file
 Overview
 --------
 
-USASearch is an embeddable search engine that can
-be used to search a site. An Affiliate profile and
-associated Affiliate ID are required. Read more at
-http://usasearch.howto.gov/
-
-When content is searched, the user will be redirected to the hosted search
-solution. When they click on a result, they will be sent back to your site.
-
-Installation
------------
-
-1. Place the usasearch directory in your sites/all/modules directory.
-1. Enable one of the following submodules:
-  * USASearch Hosted: replaces Drupal Core search with USASearch hosted search.
-  * USASearch API: Provides real time updates to USASearch's index when Drupal
-    nodes are created, modified, or deleted.
-  * USASearch field: Makes available a "USASearch" field type, which can be
-    added to Drupal entities to render a USASearch box that will search a
-    specific affiliate ID. This is useful when used in a Fieldable Panel Pane
-    in a microsite.
-  * USASearch Index: Generates a machine-readable index of all nodes that can
-    be used to passively populate USASearch's index.
-1. Configure it at admin/config/search/usasearch by entering USASearch's unique
-affiliate name for your affiliate.
-1. Grant permission for one or more roles to
-search using the built-in search module.
+DigitalGov Search (machine name: usasearch) is a search engine that can be used to power 
+the search box on any U.S. government site. Read more and sign up for an account at 
+http://search.digitalgov.gov.
 
 Requirements
 ------------
 
- * A valid Affiliate profile from USASearch.
+ * A valid search Site in the DigitalGov search Admin Center.
  * Core Search module must be enabled.
- * (usasearch_api) composer_manager and Guzzle library.
+ * USASearch submodule USASearch_API requires Composer_Manager and GuzzleHTTP 
+ library. Composer_Manager libraries require PHP 5.4.5 or higher.
+
+Pre-Install: the DigitalGov Search Admin Center
+-----------------------------------------------
+
+Before configuring this module, set up your search Site in DigitalGov Search’s 
+Admin Center (https://search.usa.gov/sites/). 
+1. Note the `Site Handle` on the Dashboard > Settings page.
+2. Email search@support.digitalgov.gov and ask us to turn on i14y for your site. After 
+we've turned it on, go to Content > i14y Drawers. Add an i14y Drawer, giving it a Drawer 
+Handle. It will be assigned a Secret Token. Note the Handle and Secret Token by clicking 
+Show.
+3. Configure your domains, social media, and other content that you want searched, and 
+customize the Display settings to brand your results page. 
+
+Learn more at http://search.digitalgov.gov/manual/index.html and 
+http://search.digitalgov.gov/manual/training.html
+
+Pre-Install: the Command Line
+-----------------------------
+
+Ping our server from the command line to confirm your API requests can reach us. 
+
+See a sample curl request and more information at http://gsa.github.io/slate/#create-a-document. 
+If you don't receive a 200 OK response, contact search@support.digitalgov.gov for assistance.
+
+Installation and Setup: Drupal
+------------------------------
+
+1. Place the usasearch directory in your sites/all/modules directory.
+2. Enable the module and the following submodules:
+  * USASearch_Hosted (required to return results): replaces Drupal Core search 
+  with USASearch hosted search.
+  * USASearch_API (required to update the index): Provides real time updates to 
+  USASearch's index when Drupal nodes are created, modified, or deleted.
+  * USASearch_field (optional): Makes available a "USASearch" field type, which 
+  can be added to Drupal entities to render a USASearch box that will search a 
+  specific affiliate ID. This is useful when used in a Fieldable Panel Pane in a 
+  microsite.
+  * USASearch Index (optional): Generates a machine-readable index of all nodes 
+  that can be used to passively populate USASearch's index.
+3. Configure it at admin/config/search/usasearch with the following information 
+from the DigitalGov Search Admin Center:
+  * Site Handle (required)
+  * Enable autocomplete to provide type-ahead search suggestions in your site’s 
+  search box
+  * Search Domain (modify only if using a CNAME for your results page)
+  * i14y Drawer Handle (optional but highly recommended - see pre-install info above)
+  * i14y Drawer Secret Key (required if a Drawer Handle is entered)
+4. Grant permission for one or more roles to search using the built-in search 
+module.
+5. Configure each content type's snippet on admin/structure/types/manage/CONTENTTYPE/display/search_index
+6. After a configuration change, run Re-Index Site on admin/config/search/settings, and then run cron.
+
 
 Setup Tips
 ------------
 
 #### API Search - usasearch_api
-This module depends on composer_manager, which will manage the PHP library
-dependencies. Namely, it will download Guzzle to the sites/all/vendor directory.
+This submodule handles the API calls that send your content to our index. It depends on 
+composer_manager, which will manage PHP library dependencies. Namely, GuzzleHTTP (see 
+sites/all/vendor). The composer libraries require PHP version 5.4.5 or higher.
 
-#### Configuration
-To configure this module, you will need your USASearch's unique
-Affiliate site handle.  Login at https://search.usa.gov/affiliates and
-select Dashboard / Settings in the left side menu in the site you want to
-use. In the URL of the page that loads, look for
-"affiliate=example.gov". "example.gov" is the Affiliate name in
-this example.
-For indexing you will need the i14y drawer handle.Login at https://search.usa.gov/affiliates and
-select Content / i14y Drawers in the left side menu. If needed Add i14y Drawer and enter
-an i14y drawer handle or select Show to display the i14y drawer handle.
+#### Updating the index
+The i14y index is updated by Drupal when content is created, modified, or 
+deleted. A bulk update can be initialized through the Re-index Site button on 
+Drupal search settings admin/config/search/settings.
+
+#### Note re: Content type search settings 
+This module contains a legacy checkbox at the content type configuration level that 
+suggests you can suppress that content type from being sent for indexing. This checkbox 
+doesn't do anything currently, and all content will be indexed. Exclusions by content 
+type, or other taxonomy terms, can be done in the DigitalGov Search Admin Center.
 
 Features
 --------
 
-The module was designed to allow exporting of all the admin
-configuration options via the Strongarm and Features modules.
+The module was designed to allow exporting of all the admin configuration options via the 
+Strongarm and Features modules.
+
+All site content is indexed, including title, body, URL, date, tags and taxonomy terms, 
+language, and (optionally) description/summary. 
