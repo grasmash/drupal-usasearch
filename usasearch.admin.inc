@@ -45,7 +45,7 @@ function usasearch_admin() {
   $form['usasearch_action_domain'] = array(
     '#type' => 'textfield',
     '#title' => t('Search domain'),
-    '#default_value' => variable_get('usasearch_action_domain', 'search.usa.gov'),
+    '#default_value' => variable_get('usasearch_action_domain', 'http://search.usa.gov'),
     '#size' => 30,
     '#maxlength' => 50,
     '#description' => t('You may enter a custom search domain, eg. "http://search.commerce.gov", or leave the default "http://search.usa.gov". This will change the search form action to submit search requests to the search domain entered. <strong>NOTE: Only change this if USASearch has configured this option for your search affiliate!</strong>'),
