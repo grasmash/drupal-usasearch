@@ -9,9 +9,6 @@
  * Implements hook_node_insert().
  */
 function usasearch_api_node_insert($node) {
-  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
-    return FALSE;
-  }
   $document = usasearch_api_convert_node_to_document($node);
   if ($document) {
     usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
@@ -26,9 +23,9 @@ function usasearch_api_node_update($node) {
   if ($node->status == 0) {
     usasearch_api_node_delete($node);
     return;
-  }
-  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
-    return FALSE;
+  } else {
+    // attempt insert in case the node is changing from unpublished to published
+    usasearch_api_node_insert($node);
   }
   $document = usasearch_api_convert_node_to_document($node);
   if ($document) {
@@ -40,11 +37,8 @@ function usasearch_api_node_update($node) {
  * Implements hook_node_delete().
  */
 function usasearch_api_node_delete($node) {
-  if (!variable_get("usasearch_api_index_{$node->type}_nodes", TRUE)) {
-    return FALSE;
-  }
-  $document = usasearch_api_convert_node_to_document($node);
-  if ($document) {
+  $document = usasearch_api_convert_node_to_document($node, true);
+  if ($document != null) {
     usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
   }
 }
@@ -119,12 +113,12 @@ function usasearch_api_preprocess_node(&$vars) {
  * @return UsaSearchDocument
  *   A UsaSearchDocument based on the provided $node object.
  */
-function usasearch_api_convert_node_to_document($node) {
+function usasearch_api_convert_node_to_document($node, $force = false) {
   global $user;
-  $original_uid = $user->uid;
   $anon_user = drupal_anonymous_user();
+  $original_uid = $user->uid;
 
-  if (node_access('view', $node, $anon_user) || $node->status == 0) {
+  if (node_access('view', $node, $anon_user) || $force) {
     $document = new UsaSearchDocument();
     $document->setDocumentId($node->nid);
     $document->setTitle($node->title);
@@ -137,14 +131,14 @@ function usasearch_api_convert_node_to_document($node) {
       $view_mode = 'teaser';
     }
     $view_teaser = node_view($node, $view_mode);
-
+    $user->uid = 0;
     $content = drupal_render($view);
     $description = drupal_render($view_teaser);
     $document->setContent($content);
 
     // Set Description to using teaser.
     $document->setDescription($description);
-    //$user->uid = $original_uid;
+    $user->uid = $original_uid;
     $document->setPath(url(drupal_get_path_alias("node/{$node->nid}"), array('absolute' => TRUE)));
     $document->setCreated(date('c', $node->created));
     $document->setPromote((bool)$node->promote);
@@ -163,7 +157,6 @@ function usasearch_api_convert_node_to_document($node) {
 
     return $document;
   }
-  //$user->uid = $original_uid;
 }
 
 /**
