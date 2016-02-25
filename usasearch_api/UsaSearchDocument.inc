@@ -31,7 +31,7 @@ class UsaSearchDocument {
   public function setDocumentId($document_id) {
     // @todo add validation for web-safe string.
     if (!preg_match('/[A-Za-z0-9_-]+/', $document_id)) {
-      thrownew Exception("The document id property must be a web safe string, containing only alpanumeric characters and/or the following characters: '-, _'");
+      throwException("The document id property must be a web safe string, containing only alpanumeric characters and/or the following characters: '-, _'");
     }
 
     $this->document_id = $document_id;
