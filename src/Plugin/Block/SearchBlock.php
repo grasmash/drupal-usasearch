@@ -17,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * @Block(
  *   id = "usasearch_search_form_block",
- *   admin_label = @Translation("DigitalGov Search form"),
+ *   admin_label = @Translation("USA Search Form"),
  *   category = @Translation("Forms")
  * )
  */
@@ -34,7 +34,6 @@ class SearchBlock extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    //TODO: look at the Cache API to see if I can get/set the block from cache
 
     //get the search form
     $block = \Drupal::formBuilder()->getForm('Drupal\usasearch\Form\SearchBlockForm');

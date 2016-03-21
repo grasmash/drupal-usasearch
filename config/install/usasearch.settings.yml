@@ -1,2 +1,3 @@
 autocomplete: 0
-action_domain: 'http://search.usa.gov/search'
+action_domain: 'http://search.usa.gov'
+action_endpoint: 'search'

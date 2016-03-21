@@ -11,7 +11,6 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\RendererInterface;
-//use Drupal\search\SearchPageRepositoryInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -71,8 +70,9 @@ class SearchBlockForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     //TODO: what needs to be done if the config uses multiple affiliates in the "allowed_affiliates" setting???
-
-    $actionUrl = Url::fromUri($this->config('usasearch.settings')->get('action_domain'), $options = array('absolute' => TRUE))->toString();
+    $actionDomain = $this->config('usasearch.settings')->get('action_domain');
+    $actionEndpoint = $this->config('usasearch.settings')->get('action_endpoint');
+    $actionUrl = Url::fromUri($actionDomain . '/' . $actionEndpoint, $options = array('absolute' => TRUE))->toString();
     $affiliate_name = $this->config('usasearch.settings')->get('affiliate_name');
     $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
@@ -102,6 +102,7 @@ class SearchBlockForm extends FormBase {
       $form['affiliate']['#value'] = $affiliate_name;
     }
 
+    //the submit button
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -109,11 +110,6 @@ class SearchBlockForm extends FormBase {
       // Prevent op from showing up in the query string.
       '#name' => '',
     );
-
-    // SearchPageRepository::getDefaultSearchPage() depends on search.settings.
-    //$this->renderer->addCacheableDependency($form, $this->configFactory->get('search.settings'));
-
-    //dpm($form);
 
     return $form;
   }
@@ -124,5 +120,6 @@ class SearchBlockForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // This form submits to the search page, so processing happens there.
   }
+
 
 }

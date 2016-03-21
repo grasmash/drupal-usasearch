@@ -14,7 +14,7 @@ function usasearch_help($route_name, RouteMatchInterface $route_match) {
     case 'usasearch.help':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!digitalgov-search-module">the online documentation</a></p>');
+      $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!usasearch-module">the online documentation</a></p>');
       return $output;
     break;
   }
@@ -34,17 +34,3 @@ function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInter
     $form['form_build_id']['#access'] = FALSE;
     $form['form_token']['#access'] = FALSE;
 }
-
-
-//TODO: look into the hook_theme_suggestions_alter() in D8 to set the block template
-//block_usasearch_search_block
-/**
- * Implements hook_theme_suggestions_HOOK().
- */
-// function usasearch_theme_suggestions_search_block(array $variables) {
-//   $suggestions = array();
-//   $suggestions[] = 'block--usasearch--search-block';
-//   return $suggestions;
-// }
-
-
