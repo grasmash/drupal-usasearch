@@ -27,7 +27,7 @@ class ConfigForm extends ConfigFormBase {
       '#default_value' => $config->get('affiliate_name'),
       '#description' => $this->t('Please enter your affiliate name provided by <a href="http://search.digitalgov.gov/" target="_blank">DigitalGov</a>, eg. "fema".'),
     ];
-    //TODO: make the i14y functionality optional
+    //TODO: make the i14y functionality optional?
     $form['drawer_handle'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Drawer Handle'),
@@ -63,6 +63,7 @@ class ConfigForm extends ConfigFormBase {
         This will change the search form action to submit search requests to the search domain entered.
         <em>NOTE: Only change this if DigitalGov has configured this option for your search affiliate</em>'),
     ];
+    //TODO: add view mode as select options
 
     return parent::buildForm($form, $form_state);
   }
