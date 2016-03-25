@@ -10,24 +10,34 @@ namespace Drupal\usasearch\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
+/**
+ * Provides a form for administering usasearch settings.
+ */
 class ConfigForm extends ConfigFormBase {
+
+  /**
+   * {@inheritdoc}
+   */
   public function getFormId() {
     return 'usasearch_settings';
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('usasearch.settings');
 
     $form['affiliate_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Affilate Name'),
-      '#size' => 30, 
-      '#maxlength' => 128, 
+      '#size' => 30,
+      '#maxlength' => 128,
       '#required' => TRUE,
       '#default_value' => $config->get('affiliate_name'),
       '#description' => $this->t('Please enter your affiliate name provided by <a href="http://search.digitalgov.gov/" target="_blank">DigitalGov</a>, eg. "fema".'),
     ];
-    //TODO: make the i14y functionality optional?
+    // @todo: make the i14y functionality optional?
     $form['drawer_handle'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Drawer Handle'),
@@ -55,19 +65,21 @@ class ConfigForm extends ConfigFormBase {
     $form['action_domain'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Search domain'),
-      '#size' => 60, 
-      '#maxlength' => 128, 
+      '#size' => 60,
+      '#maxlength' => 128,
       '#required' => TRUE,
       '#default_value' => $config->get('action_domain'),
       '#description' => $this->t('You may enter a custom search domain, eg. "http://usasearch.fema.gov", or leave the default "http://search.usa.gov".
         This will change the search form action to submit search requests to the search domain entered.
         <em>NOTE: Only change this if DigitalGov has configured this option for your search affiliate</em>'),
     ];
-    //TODO: add view mode as select options
-
+    // @todo: add view mode as select options.
     return parent::buildForm($form, $form_state);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
     $config = $this->config('usasearch.settings')
@@ -80,7 +92,11 @@ class ConfigForm extends ConfigFormBase {
       ->save();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getEditableConfigNames() {
     return ['usasearch.settings'];
   }
+
 }

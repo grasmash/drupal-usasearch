@@ -10,132 +10,149 @@ namespace Drupal\usasearch;
 use Drupal\Core\Url;
 use Drupal\node\NodeInterface;
 use Drupal\Core\Session\AnonymousUserSession;
-use Drupal\Core\Entity;
 use Drupal\taxonomy\Entity\Term;
 
+/**
+ * Provides a document in the format to be used as an i14y document.
+ */
 class UsaSearchDocument {
 
   /**
-   * A unique document ID
+   * A unique document ID.
    */
   public $document_id;
   /**
-   * Document title
+   * Document title.
    */
   public $title;
   /**
-   * Document description
+   * Document description.
    */
   public $description;
   /**
-   * Document content
+   * Document content.
    */
   public $content;
   /**
-   * Document link URL
+   * Document link URL.
    */
   public $path;
   /**
-   * When the document was created (such as ‘2013-02-27T10:00:00Z’)
+   * When the document was created (such as ‘2013-02-27T10:00:00Z’).
    */
   public $created;
   /**
-   * When the document was updated (such as ‘2013-02-27T10:00:00Z’)
+   * When the document was updated (such as ‘2013-02-27T10:00:00Z’).
    */
   public $changed;
   /**
-   * two letter language locale
+   * Two letter language locale.
    */
   public $language;
   /**
-   * Whether to promote the document in the relevance ranking
+   * Whether to promote the document in the relevance ranking.
    */
-  public $promote = false;
+  public $promote = FALSE;
   /**
-   * Comma-separated list of case-insentitive tags
+   * Comma-separated list of case-insentitive tags.
    */
   public $tags;
 
-  private $node = null;
+  private $node = NULL;
   private $status = 0;
 
   /**
+   * Constructs a new UsaSearchDocument.
    *
-   * @param object $node
+   * @param \Drupal\node\NodeInterface $node
    *   A node object to convert.
    * @param string $force
    *   Force document creation, ignoring node access.
    */
-  function __construct(NodeInterface $node, $force = false) {
+  public function __construct(NodeInterface $node, $force = FALSE) {
     $this->node = $node;
     $this->status = $this->node->isPublished();
-    if( ($this->status && $this->node->access(new AnonymousUserSession())) || $force == true ){
+    if (($this->status && $this->node->access(new AnonymousUserSession())) || $force == TRUE) {
       $this->document_id = $this->node->id();
       $this->title = $this->node->getTitle();
-      $this->path = Url::fromUri('entity:node/' . $this->node->id(), $options = array('absolute' => true))->toString();
+      $this->path = Url::fromUri('entity:node/' . $this->node->id(), $options = array('absolute' => TRUE))->toString();
       $this->created = \Drupal::service('date.formatter')->format($this->node->getCreatedTime(), $type = 'custom', $format = 'c');
       $this->language = $this->node->language()->getId();
-      //TODO: get the view to use from module config
-      //TODO: entityManager is depriciated
+      // @todo: get the view to use from module config.
+      // @todo: replace entityManager (depriciated).
       $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, 'teaser');
       $this->description = \Drupal::service('renderer')->render($view);
       $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, 'full');
       $this->content = \Drupal::service('renderer')->render($view);
       $this->tags = $this->getTerms();
       $this->changed = \Drupal::service('date.formatter')->format($this->node->getChangedTime(), $type = 'custom', $format = 'c');
-      $this->promote = $this->node->isPromoted() ? true : false;
+      $this->promote = $this->node->isPromoted() ? TRUE : FALSE;
     }
   }
 
+  /**
+   * Get a list of Taxonomy Terms from the given Node.
+   */
   public function getTerms() {
     $tids = $terms = array();
-    if ( $this->node ){
-      $fieldDefinitions = $this->node->getFieldDefinitions();
-      foreach( $fieldDefinitions as $fieldDefinition ){
-        if( $fieldDefinition->getType() == 'entity_reference' && $fieldDefinition->getSetting('target_type') == 'taxonomy_term' ){
-          $field_name= $fieldDefinition->getName();
+    if ($this->node) {
+      $field_definitions = $this->node->getFieldDefinitions();
+      foreach ($field_definitions as $field_definition) {
+        if ($field_definition->getType() == 'entity_reference' && $field_definition->getSetting('target_type') == 'taxonomy_term') {
+          $field_name = $field_definition->getName();
           $field_values = $this->node->get($field_name)->getValue();
-          foreach( $field_values as $value ){
-            if( isset($value['target_id']) ){
+          foreach ($field_values as $value) {
+            if (isset($value['target_id'])) {
               $tids[] .= $value['target_id'];
             }
           }
         }
       }
       $taxonomy_terms = Term::loadMultiple($tids);
-      foreach ($taxonomy_terms as $term){
-        //TODO: make terms keyed by vocabulary (bundle)??
+      foreach ($taxonomy_terms as $term) {
+        // @todo: make terms keyed by vocabulary (bundle)?
         $terms[] .= $term->getName();
       }
     }
-    //return comma-separated tags
+    // Return comma-separated tags.
     return implode(',', array_unique($terms));
   }
 
-  public function hasRequiredFields(){
-    return ($this->document_id && $this->title && $this->path && $this->created) ? true : false;
+  /**
+   * Check required fields for a valid UsaSearchDocument.
+   */
+  public function hasRequiredFields() {
+    return ($this->document_id && $this->title && $this->path && $this->created) ? TRUE : FALSE;
   }
 
-  public function getStatus(){
+  /**
+   * Return document status.
+   */
+  public function getStatus() {
     return $this->status;
   }
 
   /**
-   * return an array of public properties
+   * Return an array of public properties.
    */
-  public function getRawData(){
-    $publicProperties = create_function('$obj', 'return get_object_vars($obj);');
-    return $publicProperties($this);
+  public function getRawData() {
+    $public_properties = create_function('$obj', 'return get_object_vars($obj);');
+    return $public_properties($this);
   }
 
+  /**
+   * Return document as JSON string.
+   */
   public function getJson() {
-    $json = array_filter( $this->getRawData(), 'strlen');
+    $json = array_filter($this->getRawData(), 'strlen');
     return json_encode($json);
   }
 
-  public function toString(){
+  /**
+   * Return document as JSON string.
+   */
+  public function toString() {
     return $this->getJson();
   }
-
 
 }
