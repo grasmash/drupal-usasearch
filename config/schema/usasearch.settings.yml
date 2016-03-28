@@ -5,12 +5,21 @@ usasearch.settings:
     affiliate_name:
       type: string
       label: 'Affilate Name'
+    drawer_handle:
+      type: string
+      label: 'Drawer Handle'
+    secret_token:
+      type: string
+      label: 'i14y API Secret Token'
     autocomplete:
       type: boolean
       label: 'Enable autocomplete'
     action_domain:
       type: string
       label: 'Search domain'
-    allowed_affiliates:
+    description_view_mode:
       type: string
-      label: 'Allowed Affliate IDs'
+      label: 'Description View Mode'
+    action_endpoint:
+      type: string
+      label: 'Search endpoint'

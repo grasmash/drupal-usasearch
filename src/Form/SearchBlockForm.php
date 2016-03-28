@@ -11,7 +11,6 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\RendererInterface;
-//use Drupal\search\SearchPageRepositoryInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -40,7 +39,7 @@ class SearchBlockForm extends FormBase {
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The config factory.
-   * @param \Drupal\Core\Render\RendererInterface
+   * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The renderer.
    */
   public function __construct(ConfigFactoryInterface $config_factory, RendererInterface $renderer) {
@@ -70,38 +69,40 @@ class SearchBlockForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    //TODO: what needs to be done if the config uses multiple affiliates in the "allowed_affiliates" setting???
-
-    $actionUrl = Url::fromUri($this->config('usasearch.settings')->get('action_domain'), $options = array('absolute' => TRUE))->toString();
+    // @todo: support multiple affiliates in an "allowed_affiliates" setting?
+    $action_domain = $this->config('usasearch.settings')->get('action_domain');
+    $action_endpoint = $this->config('usasearch.settings')->get('action_endpoint');
+    $action_url = Url::fromUri($action_domain . '/' . $action_endpoint, $options = array('absolute' => TRUE))->toString();
     $affiliate_name = $this->config('usasearch.settings')->get('affiliate_name');
     $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
-    $form['#action'] = $actionUrl;
+    $form['#action'] = $action_url;
     $form['#method'] = 'GET';
 
-    //the search field
+    // The search field.
     $form['query'] = array(
       '#type' => 'search',
       '#title' => $this->t('Search'),
       '#title_display' => 'invisible',
       '#default_value' => '',
       '#attributes' => array(
-          'id' => 'query',
-          'title' => $this->t('Enter the terms you wish to search for.'),
-          'placeholder' => $this->t('Search'),
-          'class' => array('usagov-search-autocomplete'),
-          'autocomplete' => $use_type_ahead ? 'off' : 'on',
-          'aria-autocomplete' => 'list',
-          'aria-haspopup' => TRUE,
-        ),
+        'id' => 'query',
+        'title' => $this->t('Enter the terms you wish to search for.'),
+        'placeholder' => $this->t('Search'),
+        'class' => array('usagov-search-autocomplete'),
+        'autocomplete' => $use_type_ahead ? 'off' : 'on',
+        'aria-autocomplete' => 'list',
+        'aria-haspopup' => TRUE,
+      ),
     );
 
-    //the affiliate name
+    // The affiliate name.
     $form['affiliate']['#type'] = 'hidden';
     if ($affiliate_name && empty($form['affiliate']['#value'])) {
       $form['affiliate']['#value'] = $affiliate_name;
     }
 
+    // The submit button.
     $form['actions'] = array('#type' => 'actions');
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -110,12 +111,8 @@ class SearchBlockForm extends FormBase {
       '#name' => '',
     );
 
-    // SearchPageRepository::getDefaultSearchPage() depends on search.settings.
-    //$this->renderer->addCacheableDependency($form, $this->configFactory->get('search.settings'));
-
-    //dpm($form);
-
     return $form;
+
   }
 
   /**
