@@ -78,9 +78,11 @@ class UsaSearchDocument {
       $this->path = Url::fromUri('entity:node/' . $this->node->id(), $options = array('absolute' => TRUE))->toString();
       $this->created = \Drupal::service('date.formatter')->format($this->node->getCreatedTime(), $type = 'custom', $format = 'c');
       $this->language = $this->node->language()->getId();
-      // @todo: get the view to use from module config.
+      // Get the view mode to be used for the description.
+      $config = \Drupal::config('usasearch.settings');
+      $description_view_mode = $config->get('description_view_mode');
       // @todo: replace entityManager (depriciated).
-      $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, 'teaser');
+      $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, $description_view_mode);
       $this->description = \Drupal::service('renderer')->render($view);
       $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, 'full');
       $this->content = \Drupal::service('renderer')->render($view);

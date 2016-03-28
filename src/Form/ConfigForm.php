@@ -69,11 +69,19 @@ class ConfigForm extends ConfigFormBase {
       '#maxlength' => 128,
       '#required' => TRUE,
       '#default_value' => $config->get('action_domain'),
-      '#description' => $this->t('You may enter a custom search domain, eg. "http://usasearch.fema.gov", or leave the default "http://search.usa.gov".
-        This will change the search form action to submit search requests to the search domain entered.
-        <em>NOTE: Only change this if DigitalGov has configured this option for your search affiliate</em>'),
+      '#description' => $this->t('You may enter a custom search domain, eg. "http://search.commerce.gov", or leave the default "http://search.usa.gov". This will change the search form action to submit search requests to the search domain entered. NOTE: Only change this if USASearch has configured this option for your search affiliate!'),
     ];
-    // @todo: add view mode as select options.
+    $form['description_view_mode'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Description View Mode'),
+      '#options' => $this->getViewModes(),
+      '#empty_option' => 'Teaser',
+      '#empty_value' => 'node.teaser',
+      '#required' => FALSE,
+      '#default_value' => $config->get('description_view_mode'),
+      '#description' => $this->t('Select a preferred <a href="/admin/structure/display-modes/view">view mode</a> to define description shown in search results. The view mode will need to be enabled and configured for each content type. If the view mode is not available for a content type "Teaser" will be used.'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -88,7 +96,7 @@ class ConfigForm extends ConfigFormBase {
       ->set('secret_token', $form_state->getValue('secret_token'))
       ->set('autocomplete', $form_state->getValue('autocomplete'))
       ->set('action_domain', $form_state->getValue('action_domain'))
-      ->set('allowed_affiliates', $form_state->getValue('allowed_affiliates'))
+      ->set('description_view_mode', $form_state->getValue('description_view_mode'))
       ->save();
   }
 
@@ -97,6 +105,19 @@ class ConfigForm extends ConfigFormBase {
    */
   public function getEditableConfigNames() {
     return ['usasearch.settings'];
+  }
+
+  /**
+   * Get an assoc array of all view modes for node entity.
+   */
+  public function getViewModes() {
+    // @todo: entityManager is depreciated.
+    $modes = array();
+    $view_modes = \Drupal::entityManager()->getViewModes('node');
+    foreach ($view_modes as $mode) {
+      $modes[$mode['id']] = $mode['label'];
+    }
+    return $modes;
   }
 
 }

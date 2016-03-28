@@ -17,6 +17,9 @@ usasearch.settings:
     action_domain:
       type: string
       label: 'Search domain'
+    description_view_mode:
+      type: string
+      label: 'Description View Mode'
     action_endpoint:
       type: string
       label: 'Search endpoint'
