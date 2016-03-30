@@ -75,8 +75,8 @@ class UsaSearchDocument {
     if (($this->status && $this->node->access(new AnonymousUserSession())) || $force == TRUE) {
       $this->document_id = $this->node->id();
       $this->title = $this->node->getTitle();
-      $this->path = Url::fromUri('entity:node/' . $this->node->id(), $options = array('absolute' => TRUE))->toString();
-      $this->created = \Drupal::service('date.formatter')->format($this->node->getCreatedTime(), $type = 'custom', $format = 'c');
+      $this->path = Url::fromUri('entity:node/' . $this->node->id(), array('absolute' => TRUE))->toString();
+      $this->created = \Drupal::service('date.formatter')->format($this->node->getCreatedTime(), 'custom', 'c');
       $this->language = $this->node->language()->getId();
       // Get the view mode to be used for the description.
       $config = \Drupal::config('usasearch.settings');
@@ -87,7 +87,7 @@ class UsaSearchDocument {
       $view = \Drupal::entityManager()->getViewBuilder('node')->view($this->node, 'full');
       $this->content = \Drupal::service('renderer')->render($view);
       $this->tags = $this->getTerms();
-      $this->changed = \Drupal::service('date.formatter')->format($this->node->getChangedTime(), $type = 'custom', $format = 'c');
+      $this->changed = \Drupal::service('date.formatter')->format($this->node->getChangedTime(), 'custom', 'c');
       $this->promote = $this->node->isPromoted() ? TRUE : FALSE;
     }
   }

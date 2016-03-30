@@ -90,7 +90,7 @@ class ConfigForm extends ConfigFormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     parent::submitForm($form, $form_state);
-    $config = $this->config('usasearch.settings')
+    $this->config('usasearch.settings')
       ->set('affiliate_name', $form_state->getValue('affiliate_name'))
       ->set('drawer_handle', $form_state->getValue('drawer_handle'))
       ->set('secret_token', $form_state->getValue('secret_token'))

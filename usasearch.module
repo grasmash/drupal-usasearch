@@ -138,7 +138,7 @@ function usasearch_api_request($method, $uri, $request_options = array()) {
         '%response_code' => $response->getStatusCode(),
         '%response_body' => $response->getBody(),
       ));
-    drupal_set_message('Updated DigitalGov Search index', $status = 'status', $repeat = FALSE);
+    drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
     return TRUE;
 
   }

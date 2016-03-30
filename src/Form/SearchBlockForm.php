@@ -72,7 +72,7 @@ class SearchBlockForm extends FormBase {
     // @todo: support multiple affiliates in an "allowed_affiliates" setting?
     $action_domain = $this->config('usasearch.settings')->get('action_domain');
     $action_endpoint = $this->config('usasearch.settings')->get('action_endpoint');
-    $action_url = Url::fromUri($action_domain . '/' . $action_endpoint, $options = array('absolute' => TRUE))->toString();
+    $action_url = Url::fromUri($action_domain . '/' . $action_endpoint, array('absolute' => TRUE))->toString();
     $affiliate_name = $this->config('usasearch.settings')->get('affiliate_name');
     $use_type_ahead = $this->config('usasearch.settings')->get('autocomplete');
 
