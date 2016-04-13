@@ -5,12 +5,6 @@ usasearch.settings:
     affiliate_name:
       type: string
       label: 'Affilate Name'
-    drawer_handle:
-      type: string
-      label: 'Drawer Handle'
-    secret_token:
-      type: string
-      label: 'i14y API Secret Token'
     autocomplete:
       type: boolean
       label: 'Enable autocomplete'
@@ -23,3 +17,12 @@ usasearch.settings:
     action_endpoint:
       type: string
       label: 'Search endpoint'
+    i14y_enabled:
+      type: boolean
+      label: 'Enable i14y API'
+    drawer_handle:
+      type: string
+      label: 'Drawer Handle'
+    secret_token:
+      type: string
+      label: 'i14y API Secret Token'

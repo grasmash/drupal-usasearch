@@ -50,9 +50,11 @@ function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInter
  */
 function usasearch_node_insert($node) {
 
-  $document = new UsaSearchDocument($node);
-  if ($document && $document->hasRequiredFields()) {
-    usasearch_api_request('post', 'api/v1/documents', array('body' => $document->getJson()));
+  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+    $document = new UsaSearchDocument($node);
+    if ($document && $document->hasRequiredFields()) {
+      usasearch_api_request('post', 'api/v1/documents', array('body' => $document->getJson()));
+    }
   }
 
 }
@@ -62,25 +64,27 @@ function usasearch_node_insert($node) {
  */
 function usasearch_node_update($node) {
 
-  $document = new UsaSearchDocument($node);
-  if ($document->getStatus() == 0) {
-    // Delete from index if node has been unpublished.
-    usasearch_node_predelete($node);
-    return;
-  }
-  else {
-    // Attempt insert in case node is changing from unpublished to published.
-    // @todo: HEAD request to test if document exists in index.
-    // @see https://github.com/GSA/i14y/issues/4
-    if ($document->hasRequiredFields()) {
-      // Create.
-      $insert = usasearch_api_request('post', 'api/v1/documents/', array('body' => $document->getJson()));
-      if ($insert) {
-        return;
-      }
-      else {
-        // Update.
-        usasearch_api_request('put', 'api/v1/documents/' . $document->document_id, array('body' => $document->getJson()));
+  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+    $document = new UsaSearchDocument($node);
+    if ($document->getStatus() == 0) {
+      // Delete from index if node has been unpublished.
+      usasearch_node_predelete($node);
+      return;
+    }
+    else {
+      // Attempt insert in case node is changing from unpublished to published.
+      // @todo: HEAD request to test if document exists in index.
+      // @see https://github.com/GSA/i14y/issues/4
+      if ($document->hasRequiredFields()) {
+        // Create.
+        $insert = usasearch_api_request('post', 'api/v1/documents/', array('body' => $document->getJson()));
+        if ($insert) {
+          return;
+        }
+        else {
+          // Update.
+          usasearch_api_request('put', 'api/v1/documents/' . $document->document_id, array('body' => $document->getJson()));
+        }
       }
     }
   }
@@ -91,7 +95,11 @@ function usasearch_node_update($node) {
  * Implements hook_node_predelete().
  */
 function usasearch_node_predelete(EntityInterface $node) {
-  usasearch_api_request('delete', 'api/v1/documents/' . $node->id());
+
+  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+    usasearch_api_request('delete', 'api/v1/documents/' . $node->id());
+  }
+
 }
 
 /**
@@ -131,24 +139,24 @@ function usasearch_api_request($method, $uri, $request_options = array()) {
     $response = $client->request($method, $uri, $options);
     \Drupal::logger('usasearch')
       ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response with body "%response_body".',
-      array(
-        '%method' => $method,
-        '%uri' => $uri,
-        '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
-        '%response_code' => $response->getStatusCode(),
-        '%response_body' => $response->getBody(),
-      ));
+        array(
+          '%method' => $method,
+          '%uri' => $uri,
+          '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
+          '%response_code' => $response->getStatusCode(),
+          '%response_body' => $response->getBody(),
+        ));
     drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
     return TRUE;
 
-  }
-  catch (RequestException $exception) {
+  } catch (RequestException $exception) {
     \Drupal::logger('usasearch')
       ->error('Error updating DigtialGov Search index, Code: %code, Message: %message, Body: %body',
         array(
           '%code' => $exception->getCode(),
           '%message' => $exception->getMessage(),
-          '%body' => '<pre>' . Html::escape($exception->getResponse()->getBody()) . '</pre>',
+          '%body' => '<pre>' . Html::escape($exception->getResponse()
+              ->getBody()) . '</pre>',
         ));
     return FALSE;
   }

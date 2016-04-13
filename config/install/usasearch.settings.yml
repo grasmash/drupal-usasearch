@@ -2,3 +2,4 @@ autocomplete: 0
 action_domain: 'http://search.usa.gov'
 action_endpoint: 'search'
 description_view_mode: 'node.teaser'
+i147_enabled: 0
