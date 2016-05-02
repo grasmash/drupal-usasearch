@@ -1,7 +1,7 @@
-type_ahead:
-  version: 1.x
+usasearch.type_ahead:
+  version: VERSION
   js: 
-    js/type_ahead.js: {}
+    js/usasearch.type_ahead.js: {}
   dependencies: 
     - core/jquery
     - core/drupalSettings

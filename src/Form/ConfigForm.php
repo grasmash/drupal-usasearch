@@ -74,6 +74,11 @@ class ConfigForm extends ConfigFormBase {
       '#title' => $this->t('Drawer Handle'),
       '#size' => 30,
       '#maxlength' => 128,
+      '#states' => array(
+        'disabled' => array(
+          ':input[name=i14y_enabled]' => array('checked' => FALSE),
+        ),
+      ),
       '#default_value' => $config->get('drawer_handle'),
       '#description' => $this->t('Please enter the i14y API "drawer handle". More information about <a href="http://search.digitalgov.gov/manual/i14y-drawers.html" target="_blank">drawers</a>'),
     ];
@@ -82,6 +87,11 @@ class ConfigForm extends ConfigFormBase {
       '#title' => $this->t('i14y API Secret Token'),
       '#size' => 60,
       '#maxlength' => 128,
+      '#states' => array(
+        'disabled' => array(
+          ':input[name=i14y_enabled]' => array('checked' => FALSE),
+        ),
+      ),
       '#default_value' => $config->get('secret_token'),
       '#description' => $this->t('To find your secret token, <a href="https://search.usa.gov/login" target="_blank">login to your Digital Search account</a>, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
     ];
@@ -92,9 +102,16 @@ class ConfigForm extends ConfigFormBase {
       '#empty_option' => 'Teaser',
       '#empty_value' => 'node.teaser',
       '#required' => FALSE,
+      '#states' => array(
+        'disabled' => array(
+          ':input[name=i14y_enabled]' => array('checked' => FALSE),
+        ),
+      ),
       '#default_value' => $config->get('description_view_mode'),
       '#description' => $this->t('Select a preferred <a href="/admin/structure/display-modes/view">view mode</a> to define description shown in search results. The view mode will need to be enabled and configured for each content type. If the view mode is not available for a content type "Teaser" will be used.'),
     ];
+
+    $form['#attached']['library'][] = 'usasearch/usasearch.admin';
 
     return parent::buildForm($form, $form_state);
   }

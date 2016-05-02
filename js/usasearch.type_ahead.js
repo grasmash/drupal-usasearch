@@ -20,8 +20,7 @@
       if(moduleConfig.affiliate_name && typeof moduleConfig.affiliate_name !== 'undefined'
           && moduleConfig.type_ahead && typeof moduleConfig.type_ahead !== 'undefined' ) {
           //load the type ahead script
-          var usasearch_config = { siteHandle : moduleConfig.affiliate_name };
-          window.usasearch_config = usasearch_config;
+          window.usasearch_config = { siteHandle : moduleConfig.affiliate_name };
           var script = document.createElement("script");
           script.type = "text/javascript";
           script.src = "//search.usa.gov/javascripts/remote.loader.js";
