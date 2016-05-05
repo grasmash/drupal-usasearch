@@ -15,8 +15,7 @@ use Drupal\Core\Entity\EntityInterface;
 /**
  * Implements hook_help().
  */
-function usasearch_help($route_name, RouteMatchInterface $route_match) {
-
+function usasearch_help($route_name) {
   switch ($route_name) {
     case 'usasearch.help':
       $output = '';
@@ -27,7 +26,6 @@ function usasearch_help($route_name, RouteMatchInterface $route_match) {
   }
 
 }
-
 /**
  * Implements hook_form_FORM_ID_alter().
  *
@@ -37,20 +35,19 @@ function usasearch_help($route_name, RouteMatchInterface $route_match) {
  * @see \Drupal\usasearch\Form\SearchBlockForm::buildForm()
  */
 function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInterface $form_state) {
-
   $form['#token'] = FALSE;
   $form['form_id']['#access'] = FALSE;
   $form['form_build_id']['#access'] = FALSE;
   $form['form_token']['#access'] = FALSE;
-
 }
 
+// @TODO: move all this i14y stuff to a Service
 /**
  * Implements hook_node_insert().
  */
 function usasearch_node_insert($node) {
 
-  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+  if (usasearch_i14y_enabled($node)) {
     $document = new UsaSearchDocument($node);
     if ($document && $document->hasRequiredFields()) {
       usasearch_api_request('post', 'api/v1/documents', array('body' => $document->getJson()));
@@ -64,7 +61,7 @@ function usasearch_node_insert($node) {
  */
 function usasearch_node_update($node) {
 
-  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+  if (usasearch_i14y_enabled($node)) {
     $document = new UsaSearchDocument($node);
     if ($document->getStatus() == 0) {
       // Delete from index if node has been unpublished.
@@ -96,10 +93,32 @@ function usasearch_node_update($node) {
  */
 function usasearch_node_predelete(EntityInterface $node) {
 
-  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+  if (usasearch_i14y_enabled($node)) {
     usasearch_api_request('delete', 'api/v1/documents/' . $node->id());
   }
 
+}
+
+/**
+ * Check i14y configuration settings for a particular node
+ */
+function usasearch_i14y_enabled($node) {
+  // Check that i14y is enabled.
+  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
+    // Check that the current node type is one of the configured types.
+    $content_types = \Drupal::config('usasearch.settings')->get('content_types');
+    $enabled_content_types = array();
+    foreach($content_types as $type => $label) {
+      if($label) {
+        $enabled_content_types[] .= $type;
+      }
+    }
+    if(in_array($node->getType(), $enabled_content_types)) {
+      return TRUE;
+    }
+
+  }
+  return FALSE;
 }
 
 /**

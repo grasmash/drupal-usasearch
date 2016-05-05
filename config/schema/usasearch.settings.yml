@@ -26,3 +26,6 @@ usasearch.settings:
     secret_token:
       type: string
       label: 'i14y API Secret Token'
+    content_types:
+      type: mapping
+      label: 'Content Types'

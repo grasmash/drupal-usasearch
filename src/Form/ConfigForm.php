@@ -95,6 +95,18 @@ class ConfigForm extends ConfigFormBase {
       '#default_value' => $config->get('secret_token'),
       '#description' => $this->t('To find your secret token, <a href="https://search.usa.gov/login" target="_blank">login to your Digital Search account</a>, navigate to the "i14y Drawers" tab, and click "show" next to the drawer.'),
     ];
+    $form['i14y_settings']['content_types'] = [
+      '#type' => 'checkboxes',
+      '#options' => $this->getNodeTypes(),
+      '#title' => $this->t('Content Types'),
+      '#states' => array(
+        'disabled' => array(
+          ':input[name=i14y_enabled]' => array('checked' => FALSE),
+        ),
+      ),
+      '#default_value' => $config->get('content_types'),
+      '#description' => $this->t('Select which content types will be submitted to i14y API. Content types not selected here will <strong>not</strong> be added to the search index.'),
+    ];
     $form['i14y_settings']['description_view_mode'] = [
       '#type' => 'select',
       '#title' => $this->t('Description View Mode'),
@@ -146,6 +158,7 @@ class ConfigForm extends ConfigFormBase {
       ->set('i14y_enabled', $form_state->getValue('i14y_enabled'))
       ->set('drawer_handle', $form_state->getValue('drawer_handle'))
       ->set('secret_token', $form_state->getValue('secret_token'))
+      ->set('content_types', $form_state->getValue('content_types'))
       ->set('description_view_mode', $form_state->getValue('description_view_mode'))
       ->save();
   }
@@ -160,7 +173,7 @@ class ConfigForm extends ConfigFormBase {
   /**
    * Get an assoc array of all view modes for node entity.
    */
-  public function getViewModes() {
+  protected function getViewModes() {
     // @todo: entityManager is depreciated.
     $modes = array();
     $view_modes = \Drupal::entityManager()->getViewModes('node');
@@ -168,6 +181,18 @@ class ConfigForm extends ConfigFormBase {
       $modes[$mode['id']] = $mode['label'];
     }
     return $modes;
+  }
+
+  /**
+   * Get an assoc array of all node types.
+   */
+  protected function getNodeTypes() {
+    $list = array();
+    $nodeTypes = \Drupal\node\Entity\NodeType::loadMultiple();
+    foreach ($nodeTypes as $type) {
+      $list[$type->id()] = $this->t($type->label());
+    }
+    return $list;
   }
 
 }
