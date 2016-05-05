@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\usajobs\UsaSearchDocument.
- */
-
 namespace Drupal\usasearch;
 
 use Drupal\Core\Url;

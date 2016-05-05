@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\usasearch\Plugin\Block\SearchBlock.
- */
-
 namespace Drupal\usasearch\Plugin\Block;
 
 use Drupal\Core\Access\AccessResult;

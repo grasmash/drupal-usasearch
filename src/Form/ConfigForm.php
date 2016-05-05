@@ -1,14 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\usasearch\Form\ConfigForm.
- */
-
 namespace Drupal\usasearch\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\node\Entity\NodeType;
 
 /**
  * Provides a form for administering usasearch settings.
@@ -133,16 +129,15 @@ class ConfigForm extends ConfigFormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     if ($form_state->getValue(array('i14y_settings' => 'i14y_enabled'))) {
-      // Enabled i14y option requires valid settigns for Drawer Handle and Secret Token.
+      // Enabled i14y option requires valid settings for Drawer Handle and Secret Token.
       if (empty($form_state->getValue(array('i14y_settings' => 'drawer_handle')))) {
-        $form_state->setErrorByName('drawer_handle', $this->t('The i14y API requires a valid Drawer Hanlde'));
+        $form_state->setErrorByName('drawer_handle', $this->t('The i14y API requires a valid Drawer Handle'));
       }
       if (empty($form_state->getValue(array('i14y_settings' => 'secret_token')))) {
         $form_state->setErrorByName('secret_token', $this->t('The i14y API requires a valid Secret Token'));
       }
-    } 
-    // Todo: Test API Connection.
-
+    }
+    // @Todo: Test API Connection as condition.
     parent::validateForm($form, $form_state);
   }
 
@@ -188,9 +183,9 @@ class ConfigForm extends ConfigFormBase {
    */
   protected function getNodeTypes() {
     $list = array();
-    $nodeTypes = \Drupal\node\Entity\NodeType::loadMultiple();
+    $nodeTypes = NodeType::loadMultiple();
     foreach ($nodeTypes as $type) {
-      $list[$type->id()] = $this->t($type->label());
+      $list[$type->id()] = $type->label();
     }
     return $list;
   }

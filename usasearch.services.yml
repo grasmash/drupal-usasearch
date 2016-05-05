@@ -1,0 +1,4 @@
+services:
+  usasearch.api:
+    class: Drupal\usasearch\IndependenceDayApi
+    arguments: ['@config.factory','@logger.factory']

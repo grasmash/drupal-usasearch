@@ -5,10 +5,7 @@
  * Integrates search functionality with DigitalGov Search service.
  */
 
-use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Form\FormStateInterface;
-use GuzzleHttp\Exception\RequestException;
-use Drupal\Component\Utility\Html;
 use Drupal\usasearch\UsaSearchDocument;
 use Drupal\Core\Entity\EntityInterface;
 
@@ -22,10 +19,9 @@ function usasearch_help($route_name) {
       $output .= '<h3>' . t('About') . '</h3>';
       $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!usasearch-module">the online documentation</a></p>');
       return $output;
-
   }
-
 }
+
 /**
  * Implements hook_form_FORM_ID_alter().
  *
@@ -41,27 +37,25 @@ function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInter
   $form['form_token']['#access'] = FALSE;
 }
 
-// @TODO: move all this i14y stuff to a Service
 /**
  * Implements hook_node_insert().
  */
 function usasearch_node_insert($node) {
-
-  if (usasearch_i14y_enabled($node)) {
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
     $document = new UsaSearchDocument($node);
     if ($document && $document->hasRequiredFields()) {
-      usasearch_api_request('post', 'api/v1/documents', array('body' => $document->getJson()));
+      $api->request('post', 'api/v1/documents', array('body' => $document->getJson()));
     }
   }
-
 }
 
 /**
  * Implements hook_node_update().
  */
 function usasearch_node_update($node) {
-
-  if (usasearch_i14y_enabled($node)) {
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
     $document = new UsaSearchDocument($node);
     if ($document->getStatus() == 0) {
       // Delete from index if node has been unpublished.
@@ -74,13 +68,13 @@ function usasearch_node_update($node) {
       // @see https://github.com/GSA/i14y/issues/4
       if ($document->hasRequiredFields()) {
         // Create.
-        $insert = usasearch_api_request('post', 'api/v1/documents/', array('body' => $document->getJson()));
+        $insert = $api->request('post', 'api/v1/documents/', array('body' => $document->getJson()));
         if ($insert) {
           return;
         }
         else {
           // Update.
-          usasearch_api_request('put', 'api/v1/documents/' . $document->document_id, array('body' => $document->getJson()));
+          $api->request('put', 'api/v1/documents/' . $document->document_id, array('body' => $document->getJson()));
         }
       }
     }
@@ -92,92 +86,9 @@ function usasearch_node_update($node) {
  * Implements hook_node_predelete().
  */
 function usasearch_node_predelete(EntityInterface $node) {
-
-  if (usasearch_i14y_enabled($node)) {
-    usasearch_api_request('delete', 'api/v1/documents/' . $node->id());
-  }
-
-}
-
-/**
- * Check i14y configuration settings for a particular node
- */
-function usasearch_i14y_enabled($node) {
-  // Check that i14y is enabled.
-  if (\Drupal::config('usasearch.settings')->get('i14y_enabled')) {
-    // Check that the current node type is one of the configured types.
-    $content_types = \Drupal::config('usasearch.settings')->get('content_types');
-    $enabled_content_types = array();
-    foreach($content_types as $type => $label) {
-      if($label) {
-        $enabled_content_types[] .= $type;
-      }
-    }
-    if(in_array($node->getType(), $enabled_content_types)) {
-      return TRUE;
-    }
-
-  }
-  return FALSE;
-}
-
-/**
- * Make an API request to the i14y API.
- *
- * @param string $method
- *   The HTTP method to be used.
- * @param string $uri
- *   The URI resource to which the HTTP request will be made.
- * @param array $request_options
- *   An array of options passed directly to the request.
- *
- * @see http://gsa.github.io/slate
- * @see http://guzzle.readthedocs.org/en/5.3/quickstart.html
- */
-function usasearch_api_request($method, $uri, $request_options = array()) {
-
-  $config = \Drupal::config('usasearch.settings');
-  $options = array(
-    'base_uri' => 'https://i14y.usa.gov',
-    'timeout' => 5,
-    'connect_timeout' => 5,
-    'auth' => array(
-      $config->get('drawer_handle'),
-      $config->get('secret_token'),
-    ),
-    'headers' => array(
-      'Content-Type' => 'application/json',
-      'Accept' => 'application/json',
-    ),
-  );
-  if (!empty($request_options)) {
-    $options = array_merge($options, $request_options);
-  }
-  $client = \Drupal::httpClient();
-  try {
-    $response = $client->request($method, $uri, $options);
-    \Drupal::logger('usasearch')
-      ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response with body "%response_body".',
-        array(
-          '%method' => $method,
-          '%uri' => $uri,
-          '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
-          '%response_code' => $response->getStatusCode(),
-          '%response_body' => $response->getBody(),
-        ));
-    drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
-    return TRUE;
-
-  } catch (RequestException $exception) {
-    \Drupal::logger('usasearch')
-      ->error('Error updating DigtialGov Search index, Code: %code, Message: %message, Body: %body',
-        array(
-          '%code' => $exception->getCode(),
-          '%message' => $exception->getMessage(),
-          '%body' => '<pre>' . Html::escape($exception->getResponse()
-              ->getBody()) . '</pre>',
-        ));
-    return FALSE;
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
+    $api->request('delete', 'api/v1/documents/' . $node->id());
   }
 
 }
