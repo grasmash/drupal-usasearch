@@ -4,5 +4,3 @@ core: 8.x
 package: DigitalGov
 type: module
 configure: usasearch.settings
-dependencies:
-  - search
