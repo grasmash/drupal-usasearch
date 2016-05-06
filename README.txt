@@ -56,14 +56,14 @@ Requirements
 
 Setup Tips
 ------------
+After enabling the module go to /admin/structure/block to place the
+"USA Search Form" block in the desired region.
 
-
-TODO
-
-HOOKS
------
-Developers may use an alter hook to alter the document before being sent to i14y API.
-For example (in a custom module's mymodule.module file):
+Customization
+-------------
+Developers may use an alter hook to alter the document before being
+sent to i14y API.
+For example (in {mymodule}.module file):
 
 function mymodule_usasearch_document_alter(&$data) {
   // Append a string to the document title
@@ -71,6 +71,10 @@ function mymodule_usasearch_document_alter(&$data) {
   return $data;
 }
 
+In addition, an event 'usasearch.request' has been created and can be used by
+adding an event subscriber.
+See: https://drupalize.me/blog/201502/responding-events-drupal-8
+@Todo: create an example module implementing the event subscriber
 
 Features
 --------

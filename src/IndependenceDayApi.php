@@ -5,7 +5,7 @@ namespace Drupal\usasearch;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\usasearch\UsaSearchDocument;
+use Drupal\Component\EventDispatcher\ContainerAwareEventDispatcher;
 use GuzzleHttp\Exception\RequestException;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Utility\Html;
@@ -37,6 +37,13 @@ class IndependenceDayApi {
   protected $moduleHandler;
 
   /**
+   * An event dispatcher instance to use for configuration events.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
    * Constructs a new IndependenceDayApi instance.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -46,10 +53,11 @@ class IndependenceDayApi {
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, ModuleHandlerInterface $module_handler) {
+  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, ModuleHandlerInterface $module_handler, ContainerAwareEventDispatcher $event_dispatcher) {
     $this->configFactory = $config_factory;
     $this->loggerFactory = $logger_factory;
     $this->moduleHandler = $module_handler;
+    $this->eventDispatcher = $event_dispatcher;
   }
 
   /**
@@ -155,14 +163,17 @@ class IndependenceDayApi {
     try {
       $response = $client->request($method, $uri, $options);
       if ($response) {
+        // Register event.
+        $event = new IndependenceDayApiEvent($method, $uri, $options);
+        $this->eventDispatcher->dispatch(IndependenceDayApiEvents::REQUEST, $event);
+
         $this->loggerFactory->get('usasearch')
-          ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response with body "%response_body".',
+          ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response.',
             array(
               '%method' => $method,
               '%uri' => $uri,
               '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
               '%response_code' => $response->getStatusCode(),
-              '%response_body' => $response->getBody(),
             ));
         drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
         return TRUE;

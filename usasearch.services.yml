@@ -1,4 +1,4 @@
 services:
   usasearch.api:
     class: Drupal\usasearch\IndependenceDayApi
-    arguments: ['@config.factory', '@logger.factory', '@module_handler']
+    arguments: ['@config.factory', '@logger.factory', '@module_handler', '@event_dispatcher']
