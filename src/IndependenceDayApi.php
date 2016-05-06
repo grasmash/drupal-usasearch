@@ -3,8 +3,10 @@
 namespace Drupal\usasearch;
 
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
-use GuzzleHttp\Exception\RequestException;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\usasearch\UsaSearchDocument;
+use GuzzleHttp\Exception\RequestException;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Utility\Html;
 
@@ -26,13 +28,28 @@ class IndependenceDayApi {
    * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
    */
   protected $loggerFactory;
-  
+
   /**
-   * Constructs a new instance.
+   * Module handler service.
+   *
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
-  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory) {
+  protected $moduleHandler;
+
+  /**
+   * Constructs a new IndependenceDayApi instance.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger_factory
+   *   The logger factory.
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
+   *   The module handler.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, ModuleHandlerInterface $module_handler) {
     $this->configFactory = $config_factory;
     $this->loggerFactory = $logger_factory;
+    $this->moduleHandler = $module_handler;
   }
 
   /**
@@ -65,6 +82,23 @@ class IndependenceDayApi {
   }
 
   /**
+   * Create UsaSearchDocument and convert to JSON.
+   *
+   * @param \Drupal\node\Entity\Node $node
+   *   The Node.
+   *
+   * @return string
+   *   Return a json string.
+   */
+  public function createDocument(Node $node) {
+    $document = new UsaSearchDocument($node);
+    $rawData = $document->getRawData();
+    // Let modules alter the document.
+    $this->moduleHandler->alter('usasearch_document', $rawData);
+    return $document->setRawData($rawData);
+  }
+
+  /**
    * Get the enabled content types.
    *
    * @return array
@@ -93,9 +127,12 @@ class IndependenceDayApi {
    *
    * @see http://gsa.github.io/slate
    * @see http://guzzle.readthedocs.org/en/5.3/quickstart.html
+   *
+   * @return bool
+   *   Return if request successfully
    */
   public function request($method, $uri, $request_options = array()) {
-
+    $method = strtolower($method);
     $config = $this->configFactory->get('usasearch.settings');
     $options = array(
       'base_uri' => 'https://i14y.usa.gov',
@@ -113,20 +150,23 @@ class IndependenceDayApi {
     if (!empty($request_options)) {
       $options = array_merge($options, $request_options);
     }
+    // Make request.
     $client = \Drupal::httpClient();
     try {
       $response = $client->request($method, $uri, $options);
-      $this->loggerFactory->get('usasearch')
-        ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response with body "%response_body".',
-          array(
-            '%method' => $method,
-            '%uri' => $uri,
-            '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
-            '%response_code' => $response->getStatusCode(),
-            '%response_body' => $response->getBody(),
-          ));
-      drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
-      return TRUE;
+      if ($response) {
+        $this->loggerFactory->get('usasearch')
+          ->notice('Updated DigitalGov Search index via %method request to %uri with options: %options. Got a %response_code response with body "%response_body".',
+            array(
+              '%method' => $method,
+              '%uri' => $uri,
+              '%options' => '<pre>' . Html::escape(print_r($options, TRUE)) . '</pre>',
+              '%response_code' => $response->getStatusCode(),
+              '%response_body' => $response->getBody(),
+            ));
+        drupal_set_message(t('Updated DigitalGov Search index'), 'status', FALSE);
+        return TRUE;
+      }
     }
     catch (RequestException $exception) {
       $this->loggerFactory->get('usasearch')

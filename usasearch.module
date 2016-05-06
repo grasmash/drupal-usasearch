@@ -6,8 +6,6 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\usasearch\UsaSearchDocument;
-use Drupal\Core\Entity\EntityInterface;
 
 /**
  * Implements hook_help().
@@ -43,7 +41,7 @@ function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInter
 function usasearch_node_insert($node) {
   $api = \Drupal::service('usasearch.api');
   if ($api->nodeEnabled($node)) {
-    $document = new UsaSearchDocument($node);
+    $document = $api->createDocument($node);
     if ($document && $document->hasRequiredFields()) {
       $api->request('post', 'api/v1/documents', array('body' => $document->getJson()));
     }
@@ -56,7 +54,7 @@ function usasearch_node_insert($node) {
 function usasearch_node_update($node) {
   $api = \Drupal::service('usasearch.api');
   if ($api->nodeEnabled($node)) {
-    $document = new UsaSearchDocument($node);
+    $document = $api->createDocument($node);
     if ($document->getStatus() == 0) {
       // Delete from index if node has been unpublished.
       usasearch_node_predelete($node);
@@ -85,7 +83,7 @@ function usasearch_node_update($node) {
 /**
  * Implements hook_node_predelete().
  */
-function usasearch_node_predelete(EntityInterface $node) {
+function usasearch_node_predelete($node) {
   $api = \Drupal::service('usasearch.api');
   if ($api->nodeEnabled($node)) {
     $api->request('delete', 'api/v1/documents/' . $node->id());

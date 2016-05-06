@@ -60,6 +60,17 @@ Setup Tips
 
 TODO
 
+HOOKS
+-----
+Developers may use an alter hook to alter the document before being sent to i14y API.
+For example (in a custom module's mymodule.module file):
+
+function mymodule_usasearch_document_alter(&$data) {
+  // Append a string to the document title
+  $data['title'] = $data['title'] . ', So it goes.';
+  return $data;
+}
+
 
 Features
 --------

@@ -65,6 +65,7 @@ class UsaSearchDocument {
    *   Force document creation, ignoring node access.
    */
   public function __construct(NodeInterface $node, $force = FALSE) {
+    // @Todo: use dependency injection for Services used
     $this->node = $node;
     $this->status = $this->node->isPublished();
     if (($this->status && $this->node->access(new AnonymousUserSession())) || $force == TRUE) {
@@ -135,6 +136,21 @@ class UsaSearchDocument {
   public function getRawData() {
     $public_properties = create_function('$obj', 'return get_object_vars($obj);');
     return $public_properties($this);
+  }
+
+  /**
+   * Update UsaSearchDocument with an array of raw data.
+   *
+   * @param array $data
+   *   The raw data.
+   */
+  public function setRawData($data) {
+    foreach ($data as $key => $value) {
+      if (property_exists($this, $key)) {
+        $this->$key = $value;
+      }
+    }
+    return $this;
   }
 
   /**
