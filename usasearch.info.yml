@@ -1,7 +1,6 @@
 name: DigitalGov Search
 description: 'Provides customized search using the DigitalGov''s Search program'
 core: 8.x
-package: DigitalGov Search
+package: DigitalGov
 type: module
-dependencies:
-  - search
+configure: usasearch.settings
