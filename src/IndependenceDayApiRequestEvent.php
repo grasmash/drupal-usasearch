@@ -7,7 +7,7 @@ use Symfony\Component\EventDispatcher\Event;
 /**
  * Wraps an i14y API  event for event listeners.
  */
-class IndependenceDayApiEvent extends Event {
+class IndependenceDayApiRequestEvent extends Event {
 
   /**
    * Request method.

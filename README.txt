@@ -73,8 +73,8 @@ function mymodule_usasearch_document_alter(&$data) {
 
 In addition, an event 'usasearch.request' has been created and can be used by
 adding an event subscriber.
-See: https://drupalize.me/blog/201502/responding-events-drupal-8
-@Todo: create an example module implementing the event subscriber
+An example module creating an event subscriber:
+https://github.com/ericpugh/drupal-example-event-subscriber
 
 Features
 --------

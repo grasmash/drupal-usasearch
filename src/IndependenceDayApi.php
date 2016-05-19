@@ -164,7 +164,7 @@ class IndependenceDayApi {
       $response = $client->request($method, $uri, $options);
       if ($response) {
         // Register event.
-        $event = new IndependenceDayApiEvent($method, $uri, $options);
+        $event = new IndependenceDayApiRequestEvent($method, $uri, $options);
         $this->eventDispatcher->dispatch(IndependenceDayApiEvents::REQUEST, $event);
 
         $this->loggerFactory->get('usasearch')
