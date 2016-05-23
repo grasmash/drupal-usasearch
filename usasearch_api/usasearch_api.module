@@ -20,7 +20,8 @@ function usasearch_api_node_insert($node) {
  */
 function usasearch_api_node_update($node) {
   //  Delete from index if node has been unpublished
-  if ($node->status == 0) {
+  if ($node->status == 0 || $node->usasearch_node_include == 0) {
+    dpm('removing from index');
     usasearch_api_node_delete($node);
     return;
   } else {
@@ -118,7 +119,8 @@ function usasearch_api_convert_node_to_document($node, $force = false) {
   $anon_user = drupal_anonymous_user();
   $original_uid = $user->uid;
 
-  if (node_access('view', $node, $anon_user) || $force) {
+  if (($node->usasearch_node_include == TRUE && node_access('view', $node, $anon_user)) || $force) {
+dpm('sending to index');
     $document = new UsaSearchDocument();
     $document->setDocumentId($node->nid);
     $document->setTitle($node->title);

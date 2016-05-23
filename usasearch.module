@@ -39,12 +39,73 @@ function usasearch_menu()
 }
 
 /**
+ * Form alter
+ *
+ */
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+//function MYMODULE_form_node_form_alter(&$form, &$form_state) {
+
+function usasearch_form_node_form_alter(&$form, &$form_state) {
+  // Include/exclude node from usasearch index
+  $node = $form['#node'];
+  dpm($node);
+  $usasearch_node_settings = $node->usasearch_node_include;
+//  if(isset($form['#node']->usasearch_node_include)){
+//    $usasearch_node_type_settings = $form['#node']->usasearch_node_include;
+//  }
+  $form['digitalgovsearch_settings'] = array(
+      '#type' => 'fieldset',
+      '#access' => user_access('administer nodes'),
+      '#title' => t('DigitalGov Search settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'additional_settings',
+      '#weight' => 5,
+      'usasearch_node_include' => array(
+          '#type' => 'checkbox',
+          '#title' => t('Include in DigitalGov Search index'),
+          '#default_value' => $usasearch_node_settings,
+          '#description' => t('Check this box to inlcude this node in DigitalGov Search index.'),
+      ),
+  );
+  dpm($form);
+//  $form['digitalgovsearch_settings']['usasearch_node_include'] = array(
+//      '#type' => 'checkbox',
+//      '#title' => t('Include in DigitalGov Search index'),
+//      '#default_value' => $form['#node']->usasearch_node_include,
+//      '#description' => t('Check this box to inlcude this node in DigitalGov Search index.'),
+//  );
+}
+
+function usasearch_form_node_type_form_alter(&$form, &$form_state, $form_id) {
+  // Include/exclude node type from usasearch index
+  $form['digitalgovsearch_settings'] = array(
+      '#type' => 'fieldset',
+      '#access' => user_access('administer nodes'),
+      '#title' => t('DigitalGov Search settings'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      '#group' => 'additional_settings',
+      '#weight' => 5,
+  );
+
+  $form['digitalgovsearch_settings']['usasearch_node_type_include'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Include by default nodes of this type in DigitalGov Search index'),
+      '#default_value' => variable_get('usasearch_node_type_include_' . $form['#node_type']->type, TRUE),
+      '#description' => t('Check this box to inlcude new nodes of this type in DigitalGov Search index.'),
+  );
+
+}
+/**
  * Implements hook_form_alter().
  *
  * Changes elements in the search block, search theme form, search page form.
  */
 function usasearch_form_alter(&$form, &$form_state, $form_id) {
-
   if ($form_id == 'search_block_form' || $form_id == 'search_theme_form' || $form_id == 'search_form') {
     $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
     if ($affiliate_name) {
@@ -141,4 +202,6 @@ function usasearch_is_affiliate($affiliate_id) {
 
   return array_key_exists($affiliate_id, $subsites);
 }
+
+
 
