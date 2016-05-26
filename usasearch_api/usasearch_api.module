@@ -9,6 +9,13 @@
  * Implements hook_node_insert().
  */
 function usasearch_api_node_insert($node) {
+  $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
+  if($usasearch_node_settings){
+    $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
+  }
+  if ($node->status == 0 || $usasearch_node_settings == 0) {
+    return FALSE;
+  }
   $document = usasearch_api_convert_node_to_document($node);
   if ($document) {
     usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
@@ -20,10 +27,13 @@ function usasearch_api_node_insert($node) {
  */
 function usasearch_api_node_update($node) {
   //  Delete from index if node has been unpublished
-  if ($node->status == 0 || $node->usasearch_node_include == 0) {
-    dpm('removing from index');
+  $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
+  if($usasearch_node_settings){
+    $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
+  }
+  if ($node->status == 0 || $usasearch_node_settings == 0) {
     usasearch_api_node_delete($node);
-    return;
+    return FALSE;
   } else {
     // attempt insert in case the node is changing from unpublished to published
     usasearch_api_node_insert($node);
@@ -119,8 +129,7 @@ function usasearch_api_convert_node_to_document($node, $force = false) {
   $anon_user = drupal_anonymous_user();
   $original_uid = $user->uid;
 
-  if (($node->usasearch_node_include == TRUE && node_access('view', $node, $anon_user)) || $force) {
-dpm('sending to index');
+  if (node_access('view', $node, $anon_user) || $force) {
     $document = new UsaSearchDocument();
     $document->setDocumentId($node->nid);
     $document->setTitle($node->title);
@@ -271,6 +280,7 @@ function usasearch_api_update_index() {
 
     $text = '<h1>' . check_plain($node->title) . '</h1>' . $node->rendered;
     // Post document to DigitalGov Search i14y drawer
+    usasearch_api_node_delete($node);
     usasearch_api_node_insert($node);
     // Fetch extra data normally not visible
     $extra = module_invoke_all('node_update_index', $node);

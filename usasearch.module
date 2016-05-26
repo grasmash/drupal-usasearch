@@ -11,8 +11,7 @@
 function usasearch_menu()
 {
   $items = array();
-
-  // definition for additional tab.
+  // Definition for additional tab.
   $items['admin/config/search/settings'] = array(
       'title' => 'Search settings',
       'description' => 'Configure relevance settings for search and other indexing options.',
@@ -26,7 +25,7 @@ function usasearch_menu()
   );
 
   $items['admin/config/search/usasearch'] = array(
-      'title' => 'USASearch settings',
+      'title' => 'DigitalGov Search settings',
       'description' => 'Contains settings for customizing site search to use USASearch',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('usasearch_admin'),
@@ -39,67 +38,87 @@ function usasearch_menu()
 }
 
 /**
- * Form alter
- *
- */
-
-/**
  * Implements hook_form_BASE_FORM_ID_alter().
  */
-//function MYMODULE_form_node_form_alter(&$form, &$form_state) {
-
-function usasearch_form_node_form_alter(&$form, &$form_state) {
+function usasearch_form_node_form_alter(&$form, &$form_state, $form_id) {
   // Include/exclude node from usasearch index
   $node = $form['#node'];
-  dpm($node);
-  $usasearch_node_settings = $node->usasearch_node_include;
-//  if(isset($form['#node']->usasearch_node_include)){
-//    $usasearch_node_type_settings = $form['#node']->usasearch_node_include;
-//  }
-  $form['digitalgovsearch_settings'] = array(
-      '#type' => 'fieldset',
-      '#access' => user_access('administer nodes'),
-      '#title' => t('DigitalGov Search settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#group' => 'additional_settings',
-      '#weight' => 5,
-      'usasearch_node_include' => array(
-          '#type' => 'checkbox',
-          '#title' => t('Include in DigitalGov Search index'),
-          '#default_value' => $usasearch_node_settings,
-          '#description' => t('Check this box to inlcude this node in DigitalGov Search index.'),
-      ),
-  );
-  dpm($form);
-//  $form['digitalgovsearch_settings']['usasearch_node_include'] = array(
-//      '#type' => 'checkbox',
-//      '#title' => t('Include in DigitalGov Search index'),
-//      '#default_value' => $form['#node']->usasearch_node_include,
-//      '#description' => t('Check this box to inlcude this node in DigitalGov Search index.'),
-//  );
+  $usasearch_content_type_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
+  if(isset($node->nid) && $usasearch_content_type_settings == TRUE) {
+    $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
+  } else {
+    $usasearch_node_settings = $usasearch_content_type_settings;
+  }
+  // Include settings if allowed for content type
+  if($usasearch_content_type_settings == TRUE) {
+    $form['digitalgovsearch_settings'] = array(
+        '#type' => 'fieldset',
+        '#access' => user_access('administer nodes'),
+        '#title' => t('DigitalGov Search settings'),
+        '#group' => 'additional_settings',
+        'usasearch_node_include' => array(
+            '#type' => 'checkbox',
+            '#title' => t('Include in DigitalGov Search index'),
+            '#default_value' => $usasearch_node_settings,
+            '#description' => t('Check this box to inlcude this node in DigitalGov Search index.'),
+        ),
+    );
+  }
 }
 
+function usasearch_node_submit($node, $form, &$form_state) {
+  if (isset($form_state['values']['usasearch_node_include']) && isset($node->nid)) {
+    usasearch_save_per_node_settings($node, $form_state['values']['usasearch_node_include']);
+  }
+}
+
+function usasearch_node_insert($node)
+{
+  if (isset($node->usasearch_node_include)) {
+    usasearch_save_per_node_settings($node, $node->usasearch_node_include);
+  }
+}
+
+/**
+ * Saves custom per node settings in the own content_access table.
+ */
+function usasearch_save_per_node_settings($node, $setting) {
+  $count = db_select('digitalgovsearch')
+      ->condition('nid', $node->nid)
+      ->countQuery()->execute()->fetchField();
+  if ($count > 0) {
+    db_update('digitalgovsearch')
+        ->condition('nid', $node->nid)
+        ->fields(array('search_include' => $setting))
+        ->execute();
+  }
+  else {
+    db_insert('digitalgovsearch')
+        ->fields(array('nid' => $node->nid, 'search_include' => $setting))
+        ->execute();
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function usasearch_form_node_type_form_alter(&$form, &$form_state, $form_id) {
-  // Include/exclude node type from usasearch index
-  $form['digitalgovsearch_settings'] = array(
+  $node_type = $form['#node_type']->type;
+  $variable_name = "usasearch_node_include_{$node_type}";
+  $form['usasearch_settings'] = array(
       '#type' => 'fieldset',
-      '#access' => user_access('administer nodes'),
       '#title' => t('DigitalGov Search settings'),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
       '#group' => 'additional_settings',
-      '#weight' => 5,
   );
 
-  $form['digitalgovsearch_settings']['usasearch_node_type_include'] = array(
+  $form['usasearch_settings']['usasearch_node_include'] = array(
       '#type' => 'checkbox',
       '#title' => t('Include by default nodes of this type in DigitalGov Search index'),
-      '#default_value' => variable_get('usasearch_node_type_include_' . $form['#node_type']->type, TRUE),
-      '#description' => t('Check this box to inlcude new nodes of this type in DigitalGov Search index.'),
+      '#description' => t("Check this box to inlcude new nodes of type {$node_type} in DigitalGov Search index."),
+      '#default_value' => variable_get($variable_name, TRUE),
   );
-
 }
+
 /**
  * Implements hook_form_alter().
  *
