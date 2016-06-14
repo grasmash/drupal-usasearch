@@ -25,22 +25,27 @@ function usasearch_api_node_insert($node) {
 /**
  * Implements hook_node_update().
  */
-function usasearch_api_node_update($node) {
+function usasearch_api_node_update($node)
+{
   //  Delete from index if node has been unpublished
   $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
-  if($usasearch_node_settings){
+  if ($usasearch_node_settings) {
     $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
   }
   if ($node->status == 0 || $usasearch_node_settings == 0) {
     usasearch_api_node_delete($node);
     return FALSE;
   } else {
-    // attempt insert in case the node is changing from unpublished to published
-    usasearch_api_node_insert($node);
-  }
-  $document = usasearch_api_convert_node_to_document($node);
-  if ($document) {
-    usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+    // if the node is changing from unpublished to published, insert it
+    if (isset($node->original) && $node->original->status == 0) {
+      usasearch_api_node_insert($node);
+    } else {
+      //otherwise, update
+      $document = usasearch_api_convert_node_to_document($node);
+      if ($document) {
+        usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+      }
+    }
   }
 }
 
