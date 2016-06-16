@@ -19,6 +19,7 @@ function usasearch_api_node_insert($node) {
   $document = usasearch_api_convert_node_to_document($node);
   if ($document) {
     usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
+    setIndexStatus($node, 1);
   }
 }
 
@@ -27,23 +28,27 @@ function usasearch_api_node_insert($node) {
  */
 function usasearch_api_node_update($node)
 {
-  //  Delete from index if node has been unpublished
+  // Delete from index if node has been unpublished
   $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
+  $index_status = 0;
   if ($usasearch_node_settings) {
-    $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
+    $values = usasearch_getIndexStatus($node);
+    $usasearch_node_settings = $values['search_include'];
+    $index_status = $values['index_status'];
   }
-  if ($node->status == 0 || $usasearch_node_settings == 0) {
+  if (($node->status == 0 || $usasearch_node_settings == 0) && $index_status == 1) {
     usasearch_api_node_delete($node);
     return FALSE;
   } else {
-    // if the node is changing from unpublished to published, insert it
-    if (isset($node->original) && $node->original->status == 0) {
+    // if the node is changing from unpublished to published or index settings have changed insert it
+    if ((isset($node->original) && $node->original->status == 0) || ($index_status == 0 && $usasearch_node_settings == 1)) {
       usasearch_api_node_insert($node);
-    } else {
-      //otherwise, update
+    } else if ($index_status > 0) {
+      // update index
       $document = usasearch_api_convert_node_to_document($node);
       if ($document) {
         usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+        setIndexStatus($node, 1);
       }
     }
   }
@@ -56,6 +61,28 @@ function usasearch_api_node_delete($node) {
   $document = usasearch_api_convert_node_to_document($node, true);
   if ($document != null) {
     usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
+    db_update('digitalgovsearch')
+        ->condition('nid', $node->nid)
+        ->fields(array('index_status' => 0))
+        ->execute();
+  }
+}
+
+function usasearch_getIndexStatus($node){
+  $results = db_query("SELECT search_include, index_status FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid));
+  if($results->rowCount() > 0) {
+    return $results->fetchAssoc();
+  }
+}
+
+function setIndexStatus($node, $status)
+{
+  $results = db_query("SELECT search_include, index_status FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid));
+  if ($results->rowCount() > 0) {
+    db_update('digitalgovsearch')
+        ->condition('nid', $node->nid)
+        ->fields(array('index_status' => $status))
+        ->execute();
   }
 }
 

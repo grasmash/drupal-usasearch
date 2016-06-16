@@ -26,7 +26,6 @@ function usasearch_uninstall() {
 /**
  * Implements hook_schema().
  */
-
 function usasearch_schema()
 {
   $schema['digitalgovsearch'] = array(
@@ -43,9 +42,39 @@ function usasearch_schema()
               'type' => 'int',
               'not null' => FALSE,
           ),
+          'index_status' => array(
+              'description' => 'Boolean field node indexing preference',
+              'type' => 'int',
+              'not null' => FALSE,
+          ),
       ),
       'primary key' => array('nid'),
   );
 }
+
+/**
+ * Add {digitalgovsearch} table.
+ */
+function digitalgovsearch_update_7001() {
+    $schema = usasearch_schema();
+    if(!db_table_exists('digitalgovsearch'))
+        db_create_table('digitalgovsearch', $schema['digitalgovsearch']);
+}
+
+/**
+ * Add index_status field to the {digitalgovsearch} table.
+ */
+function usasearch_update_7002() {
+    db_add_field(
+        'digitalgovsearch',
+        'index_status',
+        array(
+            'description' => 'Boolean field node indexing preference',
+            'type' => 'int',
+            'not null' => FALSE,
+        )
+    );
+}
+
 
 

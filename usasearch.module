@@ -82,17 +82,17 @@ function usasearch_node_insert($node)
 /**
  * Saves custom per node settings in the own content_access table.
  */
-function usasearch_save_per_node_settings($node, $setting) {
-  $count = db_select('digitalgovsearch')
+function usasearch_save_per_node_settings($node, $setting){
+  $result = db_select('digitalgovsearch', 'd')
+      ->fields('d')
       ->condition('nid', $node->nid)
-      ->countQuery()->execute()->fetchField();
-  if ($count > 0) {
-    db_update('digitalgovsearch')
-        ->condition('nid', $node->nid)
-        ->fields(array('search_include' => $setting))
-        ->execute();
-  }
-  else {
+      ->execute();
+  if ($result && $result->rowCount() > 0) {
+      db_update('digitalgovsearch')
+          ->condition('nid', $node->nid)
+          ->fields(array('search_include' => $setting))
+          ->execute();
+  } else {
     db_insert('digitalgovsearch')
         ->fields(array('nid' => $node->nid, 'search_include' => $setting))
         ->execute();
