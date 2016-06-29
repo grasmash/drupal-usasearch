@@ -170,7 +170,7 @@ function usasearch_preprocess_page(&$variables) {
   // @see http://usasearch.howto.gov/post/18861028503/how-to-add-our-code-to-your-website.
   $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
   if ($affiliate_name) {
-    $action_domain = check_plain(variable_get('usasearch_action_domain', 'http://search.usa.gov'));
+    $action_domain = check_plain(variable_get('usasearch_action_domain', 'https://search.usa.gov'));
 
     $inline_js .= "var usasearch_config = { siteHandle:'$affiliate_name' };\n";
 
