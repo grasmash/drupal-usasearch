@@ -39,7 +39,7 @@ function usasearch_hosted_form_alter(&$form, &$form_state, $form_id) {
     || $form_id == 'search_form'
     || strpos($form_id, 'usasearch_field_search_box_') !== FALSE
   ) {
-    $action_domain = check_plain(variable_get('usasearch_action_domain', 'http://search.usa.gov'));
+    $action_domain = check_plain(variable_get('usasearch_action_domain', 'https://search.usa.gov'));
     $affiliate_name = check_plain(variable_get('usasearch_affiliate_name', ''));
 
     // Set action method, location and read affiliate from variable.

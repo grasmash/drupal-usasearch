@@ -12,7 +12,7 @@
  *   The search query string taken from the request URL.
  */
 function usasearch_hosted_redirect($query = '') {
-  $action_domain = check_plain(variable_get('usasearch_action_domain', 'http://search.usa.gov'));
+  $action_domain = check_plain(variable_get('usasearch_action_domain', 'https://search.usa.gov'));
   $affiliate_name = variable_get('usasearch_affiliate_name', '') ? check_plain(variable_get('usasearch_affiliate_name', '')) : '';
 
   // Check for query terms and use them in redirect if there.
