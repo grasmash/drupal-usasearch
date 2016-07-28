@@ -1,4 +1,6 @@
 <?php
+use GuzzleHttp\Client;
+require 'vendor/autoload.php';
 
 /**
  * @file
@@ -10,7 +12,7 @@
  */
 function usasearch_api_node_insert($node) {
   $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
-  if($usasearch_node_settings){
+  if ($usasearch_node_settings) {
     $usasearch_node_settings = db_query("SELECT search_include FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid))->fetchField();
   }
   if ($node->status == 0 || $usasearch_node_settings == 0) {
@@ -18,7 +20,7 @@ function usasearch_api_node_insert($node) {
   }
   $document = usasearch_api_convert_node_to_document($node);
   if ($document) {
-    usasearch_api_request('post', 'api/v1/documents', array('json' => $document->json()));
+    usasearch_api_request('POST', 'api/v1/documents', array('json' => $document->json()));
     setIndexStatus($node, 1);
   }
 }
@@ -26,8 +28,7 @@ function usasearch_api_node_insert($node) {
 /**
  * Implements hook_node_update().
  */
-function usasearch_api_node_update($node)
-{
+function usasearch_api_node_update($node) {
   // Delete from index if node has been unpublished
   $usasearch_node_settings = variable_get("usasearch_node_include_{$node->type}", TRUE);
   $index_status = 0;
@@ -39,15 +40,17 @@ function usasearch_api_node_update($node)
   if (($node->status == 0 || $usasearch_node_settings == 0) && $index_status == 1) {
     usasearch_api_node_delete($node);
     return FALSE;
-  } else {
+  }
+  else {
     // if the node is changing from unpublished to published or index settings have changed insert it
     if ((isset($node->original) && $node->original->status == 0) || ($index_status == 0 && $usasearch_node_settings == 1)) {
       usasearch_api_node_insert($node);
-    } else if ($index_status > 0) {
+    }
+    elseif ($index_status > 0) {
       // update index
       $document = usasearch_api_convert_node_to_document($node);
       if ($document) {
-        usasearch_api_request('put', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
+        usasearch_api_request('PUT', 'api/v1/documents/' . $document->getDocumentId(), array('json' => $document->json()));
         setIndexStatus($node, 1);
       }
     }
@@ -58,31 +61,24 @@ function usasearch_api_node_update($node)
  * Implements hook_node_delete().
  */
 function usasearch_api_node_delete($node) {
-  $document = usasearch_api_convert_node_to_document($node, true);
-  if ($document != null) {
-    usasearch_api_request('delete', 'api/v1/documents/' . $document->getDocumentId());
-    db_update('digitalgovsearch')
-        ->condition('nid', $node->nid)
-        ->fields(array('index_status' => 0))
-        ->execute();
+  $document = usasearch_api_convert_node_to_document($node, TRUE);
+  if ($document != NULL) {
+    usasearch_api_request('DELETE', 'api/v1/documents/' . $document->getDocumentId());
+    db_update('digitalgovsearch')->condition('nid', $node->nid)->fields(array('index_status' => 0))->execute();
   }
 }
 
-function usasearch_getIndexStatus($node){
+function usasearch_getIndexStatus($node) {
   $results = db_query("SELECT search_include, index_status FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid));
-  if($results->rowCount() > 0) {
+  if ($results->rowCount() > 0) {
     return $results->fetchAssoc();
   }
 }
 
-function setIndexStatus($node, $status)
-{
+function setIndexStatus($node, $status) {
   $results = db_query("SELECT search_include, index_status FROM {digitalgovsearch} WHERE nid = :nid", array(':nid' => $node->nid));
   if ($results->rowCount() > 0) {
-    db_update('digitalgovsearch')
-        ->condition('nid', $node->nid)
-        ->fields(array('index_status' => $status))
-        ->execute();
+    db_update('digitalgovsearch')->condition('nid', $node->nid)->fields(array('index_status' => $status))->execute();
   }
 }
 
@@ -99,39 +95,35 @@ function setIndexStatus($node, $status)
  *   An array of options passed directly to the Guzzle request.
  *
  * @see http://gsa.github.io/slate
- * @see http://guzzle.readthedocs.org/en/5.3/quickstart.html
+ * @see http://docs.guzzlephp.org/en/latest/
  */
 function usasearch_api_request($method, $url, $request_options = array()) {
-  $client = new GuzzleHttp\Client(array(
-      'base_url' => 'https://i14y.usa.gov',
-      'defaults' => array(
-        'timeout' => 5,
-        'connect_timeout' => 5,
-        'auth' => array(variable_get('usasearch_drawer_handle', ''), variable_get('usasearch_api_password', '')),
-        'headers' => array('Content-Type' => 'application/json'),
-      ),
-    ));
+  $client = new Client([
+    'base_uri' => 'https://i14y.usa.gov',
+    'timeout' => 2.0,
+    'connect_timeout' => 2.0,
+    'auth' => array(variable_get('usasearch_drawer_handle', ''), variable_get('usasearch_api_password', '')),
+    ]
+  );
 
   try {
-    $response = $client->$method($url, $request_options);
-    watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
+    $response = $client->request($method, $url, $request_options);
+    watchdog('usasearch_api', '@response_code: Sucessfully updated USASearch index via @method request to @url with options: !options.', array(
         '@method' => $method,
         '@url' => $url,
         '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
         '@response_code' => $response->getStatusCode(),
-        '@response_body' => $response->getBody(),
       ), WATCHDOG_INFO);
   }
   catch(Exception$e) {
-    watchdog('usasearch_api', 'USA Search host server could not be reached. Error: @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
-    watchdog('usasearch_api', 'The JSON sent was <br />' . '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>', array('!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>'), WATCHDOG_ERROR);
-    if ($e->getResponse()->getStatusCode()) {
-      watchdog('usasearch_api', 'Updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
+    watchdog('usasearch_api', 'The JSON sent to ' . $url . 'was &nbsp;<br />' . '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>', array('!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>'), WATCHDOG_ERROR);
+    if ($e->hasResponse()) {
+      watchdog('usasearch_api', 'Error updating USASearch index via @method request to @url with options: !options. Got a @response_code response with body "@response_body".', array(
           '@method' => $method,
           '@url' => $url,
           '!options' => '<pre>' . check_plain(print_r($request_options, TRUE)) . '</pre>',
           '@response_code' => $e->getResponse()->getStatusCode(),
-          '@response_body' => $e->getResponse()->getBody(),
+          '@response_body' => $e->getResponse()->getBody()->getContents(),
         ), WATCHDOG_INFO);
     }
   }
@@ -156,7 +148,7 @@ function usasearch_api_preprocess_node(&$vars) {
  * @return UsaSearchDocument
  *   A UsaSearchDocument based on the provided $node object.
  */
-function usasearch_api_convert_node_to_document($node, $force = false) {
+function usasearch_api_convert_node_to_document($node, $force = FALSE) {
   global $user;
   $anon_user = drupal_anonymous_user();
   $original_uid = $user->uid;

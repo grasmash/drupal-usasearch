@@ -18,11 +18,16 @@
       "name": "Matthew Grasmick",
       "email": "matt.grasmick@gmail.com",
       "homepage": "http://grasmash.com/"
+    },
+    {
+      "name": "Daniel Schiavone",
+      "email": "daniel@snakehill.net",
+      "homepage": "http://www.snakehill.net/"
     }
   ],
   "require": {
-    "php": ">=5.4.0",
-    "guzzlehttp/guzzle": "~5.0"
+    "php": ">=5.5.0",
+    "guzzlehttp/guzzle": "^6.2.1"
   }
 }
 
