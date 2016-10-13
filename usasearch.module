@@ -1,50 +1,92 @@
 <?php
 
-use Drupal\Component\Utility\SafeMarkup;
-use Drupal\Component\Utility\Html;
-use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Form\FormBase;
+/**
+ * @file
+ * Integrates search functionality with DigitalGov Search service.
+ */
+
 use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_help().
  */
-function usasearch_help($route_name, RouteMatchInterface $route_match) {
+function usasearch_help($route_name) {
   switch ($route_name) {
     case 'usasearch.help':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!digitalgov-search-module">the online documentation</a></p>');
+      $output .= '<p>' . t('This is the help docs for DigitalGov Search, see <a href="!usasearch-module">the online documentation</a></p>');
       return $output;
-    break;
   }
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
  *
- * alter the block search form so that drupal's token attributes are not passed
- * to the action as querystring params
+ * Alter the block search form so that drupal's token attributes are not passed
+ * to the action as querystring params.
  *
  * @see \Drupal\usasearch\Form\SearchBlockForm::buildForm()
  */
 function usasearch_form_usasearch_search_block_form_alter(&$form, FormStateInterface $form_state) {
-    $form['#token'] = FALSE;
-    $form['form_id']['#access'] = FALSE;
-    $form['form_build_id']['#access'] = FALSE;
-    $form['form_token']['#access'] = FALSE;
+  $form['#token'] = FALSE;
+  $form['form_id']['#access'] = FALSE;
+  $form['form_build_id']['#access'] = FALSE;
+  $form['form_token']['#access'] = FALSE;
 }
 
-
-//TODO: look into the hook_theme_suggestions_alter() in D8 to set the block template
-//block_usasearch_search_block
 /**
- * Implements hook_theme_suggestions_HOOK().
+ * Implements hook_node_insert().
  */
-// function usasearch_theme_suggestions_search_block(array $variables) {
-//   $suggestions = array();
-//   $suggestions[] = 'block--usasearch--search-block';
-//   return $suggestions;
-// }
+function usasearch_node_insert($node) {
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
+    $document = $api->createDocument($node);
+    if ($document && $document->hasRequiredFields()) {
+      $api->request('post', 'api/v1/documents', array('body' => $document->getJson()));
+    }
+  }
+}
 
+/**
+ * Implements hook_node_update().
+ */
+function usasearch_node_update($node) {
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
+    $document = $api->createDocument($node);
+    if ($document->getStatus() == 0) {
+      // Delete from index if node has been unpublished.
+      usasearch_node_predelete($node);
+      return;
+    }
+    else {
+      // Attempt insert in case node is changing from unpublished to published.
+      // @todo: HEAD request to test if document exists in index.
+      // @see https://github.com/GSA/i14y/issues/4
+      if ($document->hasRequiredFields()) {
+        // Create.
+        $insert = $api->request('post', 'api/v1/documents/', array('body' => $document->getJson()));
+        if ($insert) {
+          return;
+        }
+        else {
+          // Update.
+          $api->request('put', 'api/v1/documents/' . $document->document_id, array('body' => $document->getJson()));
+        }
+      }
+    }
+  }
 
+}
+
+/**
+ * Implements hook_node_predelete().
+ */
+function usasearch_node_predelete($node) {
+  $api = \Drupal::service('usasearch.api');
+  if ($api->nodeEnabled($node)) {
+    $api->request('delete', 'api/v1/documents/' . $node->id());
+  }
+
+}
